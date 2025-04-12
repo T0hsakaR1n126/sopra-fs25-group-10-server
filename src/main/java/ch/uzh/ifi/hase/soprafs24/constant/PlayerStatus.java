@@ -1,11 +1,11 @@
 package ch.uzh.ifi.hase.soprafs24.constant;
 
 public enum PlayerStatus {
-    OFFLINE("Offline"),
-    ONLINE("Online"),
+    WAITING("Waiting to join the lobby"),
     SEARCHING("Searching for opponent"),
     IN_GAME("In Game"),
-    IDLE("Idle");
+    FINISHED("Player has completed the game"),
+    DISCONNECTED("Player has disconnected");
 
     private final String status;
 
