@@ -1,12 +1,12 @@
 package ch.uzh.ifi.hase.soprafs24.constant;
 
-public enum GameAllow {
+public enum GameAccessType {
     PUBLIC("Public"),
     PRIVATE("Private");
 
     private final String description;
 
-    GameAllow(String description) {
+    GameAccessType(String description) {
         this.description = description;
     }
 
