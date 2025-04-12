@@ -34,6 +34,10 @@ public class Team implements Serializable {
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL)
     private List<Player> players = new ArrayList<>();
 
+    @Column(nullable = false)
+    private int desiredTeamSize;  // Desired team size (set by the team creator)
+
+    // Getters and setters
     public Long getTeamId() {
         return teamId;
     }
@@ -74,13 +78,33 @@ public class Team implements Serializable {
         this.players = players;
     }
 
+    public int getDesiredTeamSize() {
+        return desiredTeamSize;
+    }
+
+    public void setDesiredTeamSize(int desiredTeamSize) {
+        this.desiredTeamSize = desiredTeamSize;
+    }
+
+    // Method to add a player to the team
     public void addPlayer(Player player) {
         this.players.add(player);
         player.setTeam(this);
     }
 
+    // Method to remove a player from the team
     public void removePlayer(Player player) {
         this.players.remove(player);
         player.setTeam(null);
+    }
+
+    // Method to get the number of players in the team
+    public int getNumberOfPlayers() {
+        return players.size();
+    }
+
+    // Method to check if the team has reached the desired size
+    public boolean isTeamFull() {
+        return getNumberOfPlayers() >= desiredTeamSize;
     }
 }

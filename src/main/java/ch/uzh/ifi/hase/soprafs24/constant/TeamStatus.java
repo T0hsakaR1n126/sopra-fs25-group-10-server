@@ -2,6 +2,7 @@ package ch.uzh.ifi.hase.soprafs24.constant;
 
 public enum TeamStatus {
     READY("all players are ready"),
+    SEARCHING("searching for opposing team"),
     INGAME("game in progress"),
     FINISHED("game finished"),
     ABORTED("game aborted"),

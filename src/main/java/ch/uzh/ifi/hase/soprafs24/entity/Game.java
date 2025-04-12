@@ -2,6 +2,7 @@ package ch.uzh.ifi.hase.soprafs24.entity;
 
 import ch.uzh.ifi.hase.soprafs24.constant.GameAccessType;
 import ch.uzh.ifi.hase.soprafs24.constant.GameMode;
+import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -26,17 +27,21 @@ public class Game implements Serializable {
     @Column(nullable = false, unique = true)
     private String owner;
 
-    @ElementCollection
-    @CollectionTable(name = "gameplayers", joinColumns = @JoinColumn(name = "gameId"))
-    @Column(name = "username")
-    private List<String> players = new ArrayList<>();
-    
+    // Assuming you want to have a list of Player objects in the game, use @ManyToMany or @OneToMany
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
+    private List<Player> players = new ArrayList<>();
+
+    // Assuming each game involves teams, use @OneToMany for teams if applicable
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
+    private List<Team> teams = new ArrayList<>();
+
+    // Store scores for each player
     @ElementCollection
     @CollectionTable(name = "scoreboard", joinColumns = @JoinColumn(name = "gameId"))
     @MapKeyColumn(name = "username")
     @Column(name = "userscore")
     private Map<String, Integer> scoreBoard = new HashMap<>();
-    
+
     @Column(nullable = false)
     private int hintsNumber;
 
@@ -48,20 +53,23 @@ public class Game implements Serializable {
 
     @Column(nullable = false)
     private int time;
-    
+
     @Column(nullable = true)
     private String gameCreationDate;
 
-    @Enumerated(EnumType.STRING)  // Enums are stored as Strings in DB
     @Column(nullable = false)
-    private GameMode modeType;  // Game mode (1v1, Team vs Team, Solo)
+    private GameStatus gameStatus = GameStatus.WAITING;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private GameAccessType accessType;  // Public or Private game
+    private GameMode modeType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private GameAccessType accessType;
 
     @Column(nullable = true)
-    private String password;  // Used for private games
+    private String password;
 
     // Getter and Setter for GameMode
     public GameMode getModeType() {
@@ -115,22 +123,22 @@ public class Game implements Serializable {
         this.owner = owner;
     }
 
-    public List<String> getPlayers() {
+    public List<Player> getPlayers() {
         return players;
     }
 
-    public void setPlayers(List<String> players) {
+    public void setPlayers(List<Player> players) {
         this.players = players;
     }
 
-    public void addPlayer(User player) {
-        players.add(player.getUsername());
-        player.setGame(this);
+    public void addPlayer(Player player) {
+        players.add(player);  // Assuming Player has a setGame method to link back to the game
+        player.setGame(this);  // Set the game for the player
     }
 
-    public void removePlayer(User player) {
-        players.remove(player.getUsername());
-        player.setGame(null);
+    public void removePlayer(Player player) {
+        players.remove(player);
+        player.setGame(null);  // Set the game for the player to null
     }
 
     public Map<String, Integer> getScoreBoard() {
@@ -191,5 +199,21 @@ public class Game implements Serializable {
 
     public void setGameCreationDate(String gameCreationDate) {
         this.gameCreationDate = gameCreationDate;
+    }
+
+    public GameStatus getGameStatus() {
+        return gameStatus;
+    }
+
+    public void setGameStatus(GameStatus gameStatus) {
+        this.gameStatus = gameStatus;
+    }
+
+    public List<Team> getTeams() {
+        return teams;
+    }
+
+    public void setTeams(List<Team> teams) {
+        this.teams = teams;
     }
 }

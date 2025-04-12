@@ -1,5 +1,6 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
 
+import ch.uzh.ifi.hase.soprafs24.constant.GameMode;
 import ch.uzh.ifi.hase.soprafs24.constant.GameRoleType;
 import ch.uzh.ifi.hase.soprafs24.constant.PlayerStatus;
 
@@ -42,6 +43,9 @@ public class Player implements Serializable {
     @JoinColumn(name = "teamId", nullable = true)
     private Team team;
 
+    @Column(nullable = false)
+    private GameMode modeType = GameMode.SOLO;
+
     // Constructor to handle player creation
     public Player(User user, Game game) {
         if (user != null) {
@@ -82,6 +86,13 @@ public class Player implements Serializable {
         this.user = user;
     }
 
+    public GameMode getModeType() {
+        return modeType;
+    }
+
+    public void setModeType(GameMode modeType) {
+        this.modeType = modeType;
+    }
     public Game getGame() {
         return game;
     }
