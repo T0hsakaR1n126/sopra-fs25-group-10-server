@@ -1,5 +1,6 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
+import ch.uzh.ifi.hase.soprafs24.constant.GameMode;
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
 import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
@@ -64,7 +65,7 @@ public class GameService {
       gameCreated.setOwner(gameToCreate.getOwner());
 
       gameCreated.setScoreBoard(scoreBoard);
-      gameCreated.setPlayers(players);
+    //   gameCreated.setPlayers(players);
       gameCreated.setHintsNumber(5);
       checkIfGameNameExists(gameToCreate.getGameName());
       gameCreated.setGameName(gameToCreate.getGameName());
@@ -72,7 +73,7 @@ public class GameService {
       gameCreated.setPlayersNumber(gameToCreate.getPlayersNumber());
       gameCreated.setRealPlayersNumber(1);
 
-      String mode = gameToCreate.getModeType();
+      GameMode mode = gameToCreate.getModeType();
       if (mode == null || (!mode.equals("solo") && !mode.equals("combat"))) {
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid mode type: must be 'solo' or 'combat'");
       }
@@ -99,7 +100,7 @@ public class GameService {
     public void userJoinGame(Game gameToBeJoined, Long userId){
       if((gameRepository.findBygameId(gameToBeJoined.getGameId())).getRealPlayersNumber() == 5){
         if(gameToBeJoined.getPassword().equals((gameRepository.findBygameId(gameToBeJoined.getGameId())).getPassword())){
-          (gameRepository.findBygameId(gameToBeJoined.getGameId())).addPlayer(userRepository.findByUserId(userId));
+        //   (gameRepository.findBygameId(gameToBeJoined.getGameId())).addPlayer(userRepository.findByUserId(userId));
           (gameRepository.findBygameId(gameToBeJoined.getGameId())).setRealPlayersNumber((gameRepository.findBygameId(gameToBeJoined.getGameId())).getRealPlayersNumber()+1);
         }
         else{
@@ -112,7 +113,7 @@ public class GameService {
     }
 
     public void userExitGame(Game gameToBeExited, Long userId){
-      (gameRepository.findBygameId(gameToBeExited.getGameId())).removePlayer(userRepository.findByUserId(userId));
+    //   (gameRepository.findBygameId(gameToBeExited.getGameId())).removePlayer(userRepository.findByUserId(userId));
       (gameRepository.findBygameId(gameToBeExited.getGameId())).setRealPlayersNumber((gameRepository.findBygameId(gameToBeExited.getGameId())).getRealPlayersNumber()-1);
       (userRepository.findByUserId(userId)).setGame(null);
     }
@@ -145,14 +146,14 @@ public class GameService {
 
       //set scoreBoard
 
-      (gameToStart.getScoreBoard()).put(gameToStart.getOwner(), 0);
-      for (String username : gameToStart.getPlayers()) {
-        User player = userRepository.findByUsername(username);
-        if (player == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, username + " is not found");
-        }
-        (gameToStart.getScoreBoard()).put(username, 0); 
-      }
+    //   (gameToStart.getScoreBoard()).put(gameToStart.getOwner(), 0);
+    //   for (String username : gameToStart.getPlayers()) {
+    //     User player = userRepository.findByUsername(username);
+    //     if (player == null) {
+    //         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, username + " is not found");
+    //     }
+    //     (gameToStart.getScoreBoard()).put(username, 0); 
+    //   }
     }
 
     public void submitScores(Long gameId, Map<String, Integer> incomingScores) {

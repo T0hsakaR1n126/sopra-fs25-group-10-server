@@ -12,7 +12,7 @@ public class GameGetDTO {
 
     private String gameName;
 
-    private String lockType;
+    private String accessType;
 
     private int playersNumber;
 
@@ -54,12 +54,12 @@ public class GameGetDTO {
         this.playersNumber = playersNumber;
     }     
     
-    public String getLockType() {
-        return lockType;
+    public String getaccessType() {
+        return accessType;
     }
     
-    public void setLockType(String lockType) {
-        this.lockType = lockType;
+    public void setaccessType(String accessType) {
+        this.accessType = accessType;
     }
 
     public int getPlayerNumbers() {

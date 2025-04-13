@@ -37,8 +37,10 @@ public interface DTOMapper {
     @Mapping(source = "playersNumber", target = "playersNumber")
     @Mapping(source = "time", target = "time")
     @Mapping(source = "password", target = "password")
-    @Mapping(source = "players", target = "players")
-    @Mapping(source = "teams", target = "teams")
+    @Mapping(source = "modeType", target = "modeType")
+    @Mapping(source = "accessType", target = "accessType")
+    // @Mapping(source = "players", target = "players")
+    // @Mapping(source = "teams", target = "teams")
     Game convertGamePostDTOtoGameEntity(GamePostDTO gamePostDTO);
 
     // Game mappings (GET)
@@ -49,8 +51,10 @@ public interface DTOMapper {
     @Mapping(source = "realPlayersNumber", target = "realPlayersNumber")
     @Mapping(source = "scoreBoard", target = "scoreBoard")
     @Mapping(source = "password", target = "password")
-    @Mapping(source = "players", target = "players")
-    @Mapping(source = "teams", target = "teams")
+    @Mapping(source = "modeType", target = "modeType")
+    @Mapping(source = "accessType", target = "accessType")
+    // @Mapping(source = "players", target = "players")
+    // @Mapping(source = "teams", target = "teams")
     GameGetDTO convertGameEntityToGameGetDTO(Game game);
 
     // Profile mappings
@@ -61,9 +65,9 @@ public interface DTOMapper {
     User convertUserProfileDTOtoEntity(UserProfileDTO userProfileDTO);
 
     // Extra mappers (you must define PlayerDTO and TeamDTO classes)
-    List<PlayerGetDTO> playersToPlayerDTOs(List<Player> players);
-    List<TeamGetDTO> teamsToTeamDTOs(List<Team> teams);
+    // List<PlayerGetDTO> playersToPlayerDTOs(List<Player> players);
+    // List<TeamGetDTO> teamsToTeamDTOs(List<Team> teams);
 
-    List<Player> playerDTOsToPlayers(List<PlayerPostDTO> playerDTOs);
-    List<Team> teamDTOsToTeams(List<TeamPostDTO> teamDTOs);
+    // List<Player> playerDTOsToPlayers(List<PlayerPostDTO> playerDTOs);
+    // List<Team> teamDTOsToTeams(List<TeamPostDTO> teamDTOs);
 }

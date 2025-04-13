@@ -10,7 +10,7 @@ public class GamePostDTO {
 
     private String owner;
 
-    private List<String> players;
+    // private List<String> players;
     
     private int playersNumber;
 
@@ -18,7 +18,7 @@ public class GamePostDTO {
   
     private String modeType;
 
-    private String lockType;
+    private String accessType;
 
     private String password;
 
@@ -46,13 +46,13 @@ public class GamePostDTO {
         this.owner = owner;
     }
 
-    public List<String> getPlayers() {
-        return players;
-    }
+    // public List<String> getPlayers() {
+    //     return players;
+    // }
 
-    public void setPlayers(List<String> players) {
-        this.players = players;
-    }
+    // public void setPlayers(List<String> players) {
+    //     this.players = players;
+    // }
 
     public int getPlayersNumber() {
         return playersNumber;
@@ -79,12 +79,12 @@ public class GamePostDTO {
         this.modeType = modeType;
       }
     
-      public String getLockType() {
-        return lockType;
+      public String getaccessType() {
+        return accessType;
       }
     
-      public void setLockType(String lockType) {
-        this.lockType = lockType;
+      public void setaccessType(String accessType) {
+        this.accessType = accessType;
       }
     
       public String getPassword() {
