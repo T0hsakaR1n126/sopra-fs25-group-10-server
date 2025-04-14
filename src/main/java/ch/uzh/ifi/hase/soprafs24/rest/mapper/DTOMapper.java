@@ -2,6 +2,7 @@ package ch.uzh.ifi.hase.soprafs24.rest.mapper;
 
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
+import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GamePostDTO;
@@ -44,13 +45,12 @@ public interface DTOMapper {
   UserGetDTO convertEntityToUserGetDTO(User user);
 
   // Game mappings
-  @Mapping(source = "gameId", target = "gameId")
   @Mapping(source = "ownerId", target = "ownerId")
-  @Mapping(source = "players", target = "players")
   @Mapping(source = "gameName", target = "gameName") 
   @Mapping(source = "playersNumber", target = "playersNumber")
   @Mapping(source = "time", target = "time") 
-  // @Mapping(source = "modeType", target = "modeType") 
+  @Mapping(source = "modeType", target = "modeType")
+  @Mapping(source = "accessType", target = "accessType") 
   @Mapping(source = "password", target = "password")  
   Game convertGamePostDTOtoGameEntity(GamePostDTO gamePostDTO);
 

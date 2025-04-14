@@ -77,58 +77,58 @@ public class GameController {
   public void joinGame(@RequestBody GamePostDTO gamePostDTO, @PathVariable Long userId) {
     Game gameToBeJoined = DTOMapper.INSTANCE.convertGamePostDTOtoGameEntity(gamePostDTO);
   
-    gameService.userJoinGame(gameToBeJoined, userId);
+    // gameService.userJoinGame(gameToBeJoined, userId);
   }
 
   @PutMapping("/lobbyOut/{userId}")
   @ResponseStatus(HttpStatus.OK)
   @ResponseBody
   public void exitGame(@PathVariable Long userId) {
-    gameService.userExitGame(userId);
+    // gameService.userExitGame(userId);
   }
 
-  @GetMapping("/ready/{gameId}")
-  @ResponseStatus(HttpStatus.OK)
-  @ResponseBody
-  public List<UserGetDTO> getGamePlayers(@PathVariable Long gameId) {
-    List<User> players = gameService.getGamePlayers(gameId);
+//   @GetMapping("/ready/{gameId}")
+//   @ResponseStatus(HttpStatus.OK)
+//   @ResponseBody
+//   public List<UserGetDTO> getGamePlayers(@PathVariable Long gameId) {
+//     List<User> players = gameService.getGamePlayers(gameId);
 
-    List<UserGetDTO> allPlayersDTOs = new ArrayList<>();
-    for (User player : players) {
-      allPlayersDTOs.add(DTOMapper.INSTANCE.convertEntityToUserGetDTO(player));
-    }
-    return allPlayersDTOs;
-  }
+//     List<UserGetDTO> allPlayersDTOs = new ArrayList<>();
+//     for (User player : players) {
+//       allPlayersDTOs.add(DTOMapper.INSTANCE.convertEntityToUserGetDTO(player));
+//     }
+//     return allPlayersDTOs;
+//   }
 
-  @PutMapping("/start/{gameId}")
-  @ResponseStatus(HttpStatus.OK)
-  @ResponseBody
-  public void startGame(@PathVariable Long gameId) {
-    gameService.startGame(gameId);
-  }
+//   @PutMapping("/start/{gameId}")
+//   @ResponseStatus(HttpStatus.OK)
+//   @ResponseBody
+//   public void startGame(@PathVariable Long gameId) {
+//     gameService.startGame(gameId);
+//   }
 
-  @PutMapping("/games/{gameId}/end")
-  @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void submitScores(@PathVariable Long gameId, @RequestBody GamePostDTO gamePostDTO) {
-      gameService.submitScores(
-          gameId,
-          gamePostDTO.getScoreMap(),
-          gamePostDTO.getCorrectAnswersMap(),
-          gamePostDTO.getTotalQuestionsMap()
-      );
-  }
+//   @PutMapping("/games/{gameId}/end")
+//   @ResponseStatus(HttpStatus.NO_CONTENT)
+//   public void submitScores(@PathVariable Long gameId, @RequestBody GamePostDTO gamePostDTO) {
+//       gameService.submitScores(
+//           gameId,
+//           gamePostDTO.getScoreMap(),
+//           gamePostDTO.getCorrectAnswersMap(),
+//           gamePostDTO.getTotalQuestionsMap()
+//       );
+//   }
 
-  @GetMapping("/users/{userId}/history")
-  @ResponseStatus(HttpStatus.OK)
-  @ResponseBody
-  public List<GameGetDTO> getUserGameHistory(@PathVariable Long userId) {
-    return gameService.getGamesByUser(userId);
-  }
+//   @GetMapping("/users/{userId}/history")
+//   @ResponseStatus(HttpStatus.OK)
+//   @ResponseBody
+//   public List<GameGetDTO> getUserGameHistory(@PathVariable Long userId) {
+//     return gameService.getGamesByUser(userId);
+//   }
 
-  @GetMapping("/leaderboard")
-  @ResponseStatus(HttpStatus.OK)
-  @ResponseBody
-  public List<GameGetDTO> getLeaderboard() {
-    return gameService.getLeaderboard();
-  }
+//   @GetMapping("/leaderboard")
+//   @ResponseStatus(HttpStatus.OK)
+//   @ResponseBody
+//   public List<GameGetDTO> getLeaderboard() {
+//     return gameService.getLeaderboard();
+//   }
 }

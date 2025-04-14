@@ -1,6 +1,9 @@
 package ch.uzh.ifi.hase.soprafs24.rest.dto;
 
 import java.util.Map;
+
+import ch.uzh.ifi.hase.soprafs24.constant.GameAccessType;
+
 import java.util.List;
 import java.time.LocalDateTime;
 
@@ -24,7 +27,7 @@ public class GameGetDTO {
 
     private int time;
 
-    private String lockType;
+    private GameAccessType accessType;
 
     private int playersNumber;
 
@@ -86,12 +89,12 @@ public class GameGetDTO {
         this.playersNumber = playersNumber;
     }     
     
-    public String getLockType() {
-        return lockType;
+    public GameAccessType getAccessType() {
+        return accessType;
     }
     
-    public void setLockType(String lockType) {
-        this.lockType = lockType;
+    public void setAccessType(GameAccessType accessType) {
+        this.accessType = accessType;
     }
 
     public int getPlayerNumbers() {
