@@ -10,9 +10,9 @@ import ch.uzh.ifi.hase.soprafs24.constant.PlayerStatus;
 
 @Repository
 public interface PlayerRepository extends JpaRepository<Player, Long> {
-    List<Player> findByGame_GameId(Long gameId);
-    List<Player> findByTeam_TeamId(Long teamId);
+    List<Player> findByGameId(Long gameId);
+    List<Player> findByTeamId(Long teamId);
     List<Player> findByPlayerStatus(PlayerStatus playerStatus);
-    List<Player> findByGame_GameIdAndPlayerStatus(Long gameId, PlayerStatus playerStatus);
-    List<Player> findByGame_GameIdAndPlayerStatusAndTeam_TeamId(Long gameId, PlayerStatus playerStatus, Long teamId);
+    List<Player> findByGameIdAndPlayerStatus(Long gameId, PlayerStatus playerStatus);
+    List<Player> findByGameIdAndPlayerStatusAndTeam_TeamId(Long gameId, PlayerStatus playerStatus, Long teamId);
 }

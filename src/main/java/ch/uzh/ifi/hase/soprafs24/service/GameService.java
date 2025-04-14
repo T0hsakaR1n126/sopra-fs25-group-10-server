@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.Map;
+import java.util.Objects;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
@@ -103,12 +104,23 @@ public class GameService {
     
     // Game Creation Service
     public Game createGame(Game gameToCreate) {
-        // Ensure game mode is specified
+        
         if (gameToCreate.getModeType() == null) {
             throw new IllegalArgumentException("Game mode must be specified.");
         }
         
-        // Create a new Game entity
+        if (gameToCreate.getModeType() == GameMode.SOLO) {
+            Integer playersNumber = gameToCreate.getPlayersNumber();
+            if (playersNumber == null || playersNumber != 1) {
+                throw new IllegalArgumentException("For SOLO games, the number of players must be exactly 1.");
+            }
+        } else if (gameToCreate.getModeType() == GameMode.ONE_VS_ONE) {
+            if (gameToCreate.getPlayersNumber() != 1) {
+                throw new IllegalArgumentException("For 1v1 games, the number of players must be exactly 2.");
+            }
+        }
+        
+        
         Game gameCreated = new Game();
         gameCreated.setModeType(gameToCreate.getModeType());
         gameCreated.setGameName(gameToCreate.getGameName());
@@ -141,15 +153,15 @@ public class GameService {
             checkIfGameHaveSameOwner(ownerId);
             ownerUser = userRepository.findByUserId(ownerId);
         }
-
+        
         Player ownerPlayer = new Player(ownerUser, gameCreated);
         ownerPlayer.setPlayerStatus(PlayerStatus.WAITING);
+        ownerPlayer.assignPlayerName();
         
         playerRepository.save(ownerPlayer);
         gameCreated.addPlayer(ownerPlayer);
         gameCreated.setOwnerId(ownerId);
         
-        // Log for debugging
         log.debug("Added new player: {} to game: {}", ownerPlayer.getPlayerId(), gameCreated.getGameId());
         
         
@@ -168,259 +180,289 @@ public class GameService {
         return gameRepository.findBygameId(gameId);
     }
     
-    //     public void userJoinGame(Game gameToBeJoined, Long userId){
-    //         Game targetGame = gameRepository.findBygameId(gameToBeJoined.getGameId());
-    //         if(targetGame.getRealPlayersNumber() != targetGame.getPlayersNumber()){
-    //             if(gameToBeJoined.getPassword().equals(targetGame.getPassword())){
-    //                 targetGame.addPlayer(userRepository.findByUserId(userId));
-    //                 targetGame.setRealPlayersNumber(targetGame.getRealPlayersNumber()+1);
-    //                 gameRepository.save(targetGame);
-    //                 gameRepository.flush();
+    public void userJoinGame(Long gameId, Long userId, String password) {
+        Game targetGame = gameRepository.findBygameId(gameId);
+        
+        if (targetGame == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found.");
+        }
+        
+        // Check if the game is already full
+        if (targetGame.getRealPlayersNumber() >= targetGame.getPlayersNumber()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You can't join this game because it is full!");
+        }
+        
+        // Check password if game is private
+        if (targetGame.getAccessType() == GameAccessType.PRIVATE) {
+            if (!Objects.equals(password, targetGame.getPassword())) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Wrong password! You can't join the game!");
+            }
+        }
+        
+        Player newPlayer;
+        
+        if (userId != null) {
+            // Validate user existence
+            User user = userRepository.findByUserId(userId);
+            if (user == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found.");
+            }
+            
+            newPlayer = new Player(user, targetGame);
+            newPlayer.setPlayerStatus(PlayerStatus.WAITING);
+            newPlayer.assignPlayerName();
+            playerRepository.save(newPlayer);
+            // Optional: Assign ownerId if not already set
+            if (targetGame.getOwnerId() == null) {
+                targetGame.setOwnerId(userId);
+            }
+        } else {
+            // Create guest player
+            newPlayer = new Player(null, targetGame);
+            newPlayer.setPlayerStatus(PlayerStatus.WAITING);
+            playerRepository.save(newPlayer);
+        }
+        
+        targetGame.addPlayer(newPlayer);
+        targetGame.setRealPlayersNumber(targetGame.getRealPlayersNumber() + 1);
+        
+        gameRepository.save(targetGame);
+        gameRepository.flush();
+        playerRepository.flush();
+        
+        // Notify via WebSocket
+        List<Player> players = playerRepository.findByGameId(targetGame.getGameId());
+        messagingTemplate.convertAndSend("/topic/ready/" + targetGame.getGameId() + "/players", players);
+        
+        log.info("Player {} joined game {}", newPlayer.getPlayerId(), targetGame.getGameId());
+    }
     
-    //                 User targetUser = userRepository.findByUserId(userId);
-    //                 targetUser.setGame(gameToBeJoined);
-    //                 userRepository.save(targetUser);
-    //                 userRepository.flush();
-    
-    //                 List<User> players = getGamePlayers(gameToBeJoined.getGameId());
-    //                 messagingTemplate.convertAndSend("/topic/ready/" + gameToBeJoined.getGameId() + "/players", players);
-    //                 log.info("websocket send!");
-    //             }
-    //             else{
-    //                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Wrong Password! You can't join the game! Please try again!"); 
-    //             }
-    //         }
-    //         else{
-    //             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You can't join this game because this game is full!");
-    //         }
-    //     }
-    
-    //     public void userExitGame(Long userId){
-    //         Game targetGame = userRepository.findByUserId(userId).getGame();
-    //         if(userId != targetGame.getOwnerId()){
-    //             log.info("gameId: ", targetGame.getGameId());
-    //             targetGame.removePlayer(userRepository.findByUserId(userId));
-    //             targetGame.setRealPlayersNumber(targetGame.getRealPlayersNumber()-1);
-    //             gameRepository.save(targetGame);
-    //             gameRepository.flush();
-    
-    //             User targetUser = userRepository.findByUserId(userId);
-    //             targetUser.setGame(null);
-    //             userRepository.save(targetUser);
-    //             userRepository.flush();
-    
-    //             List<User> players = getGamePlayers(targetGame.getGameId());
-    //             messagingTemplate.convertAndSend("/topic/ready/" + targetGame.getGameId() + "/players", players);
-    //             log.info("websocket send!");
-    //         }
-    //         else if(targetGame.getRealPlayersNumber()==1){
-    //             gameRepository.deleteByGameId(targetGame.getGameId());
-    //             gameRepository.flush();
-    
-    //             User targetUser = userRepository.findByUserId(userId);
-    //             targetUser.setGame(null);
-    //             userRepository.save(targetUser);
-    //             userRepository.flush();
-    
-    //             List<User> players = getGamePlayers(targetGame.getGameId());
-    //             messagingTemplate.convertAndSend("/topic/ready/" + targetGame.getGameId() + "/players", players);
-    //             log.info("websocket send!");
-    
-    //         }
-    //         else{
-    //             targetGame.removePlayer(userRepository.findByUserId(userId));
-    //             targetGame.setRealPlayersNumber(targetGame.getRealPlayersNumber()-1);
-    //             targetGame.setOwnerId((targetGame.getPlayers()).get(0));
-    //             gameRepository.save(targetGame);
-    //             gameRepository.flush();
-    
-    //             User targetUser = userRepository.findByUserId(userId);
-    //             targetUser.setGame(null);
-    //             userRepository.save(targetUser);
-    //             userRepository.flush();
-    
-    //             List<User> players = getGamePlayers(targetGame.getGameId());
-    //             messagingTemplate.convertAndSend("/topic/ready/" + targetGame.getGameId() + "/players", players);
-    //             log.info("websocket send!");
-    //         }
-    //     }
-    
-    //     public List<User> getGamePlayers(Long gameId){
-    //         Game gameJoined = gameRepository.findBygameId(gameId);
-    //         List<Long> allPlayers = gameJoined.getPlayers();
-    
-    //         List<User> players = new ArrayList<>();
-    //         for (Long userId : allPlayers) {
-    //             players.add(userRepository.findByUserId(userId));
-    //         }
-    //         return players;
-    //         //
-    //         //      List<UserGetDTO> allPlayersDTOs = new ArrayList<>();
-    //         //
-    //         //      for (Long userId : allPlayers) {
-    //         //        allPlayersDTOs.add(DTOMapper.INSTANCE.convertEntityToUserGetDTO(userRepository.findByUserId(userId)));
-    //         //      }
-    //         //      return allPlayersDTOs;
-    
-    //     }
-    
-    
-    //     public void startGame(Long gameId){
-    //         Game gameToStart = gameRepository.findBygameId(gameId);
-    
-    //         //set time
-    //         LocalDateTime now = LocalDateTime.now();    
-    //         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy, HH:mm");
-    //         gameToStart.setGameCreationDate(now.format(formatter));
-    
-    //         //set scoreBoard
-    
-    //         (gameToStart.getScoreBoard()).put(gameToStart.getOwnerId(), 0);
-    //         for (Long userId : gameToStart.getPlayers()) {
-    //             User player = userRepository.findByUserId(userId);
-    //             if (player == null) {
-    //                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, (userRepository.findByUserId(userId)).getUsername() + " is not found");
-    //             }
-    //             (gameToStart.getScoreBoard()).put(userId, 0); 
-    //         }
-    
-    //         generatedHintsA = utilService.generateClues(gameToStart.getHintsNumber());
-    //         generatedHintsB = utilService.generateClues(gameToStart.getHintsNumber());
-    
-    //         GameGetDTO gameHintDTO = new GameGetDTO();
-    
-    //         gameHintDTO.setHints(generatedHintsA.values().iterator().next());
-    //         gameHintDTO.setTime(gameToStart.getTime());
-    
-    //         messagingTemplate.convertAndSend("/topic/start/" + gameId + "/hints", gameHintDTO);
-    //         log.info("websocket send!");
-    
-    //     }
-    
-    //     public GameGetDTO processingAnswer(GamePostDTO gamePostDTO, Long userId){
-    
-    //         //judge right or wrong and update game
-    //         Game targetGame = gameRepository.findBygameId(gamePostDTO.getGameId());
-    //         //sum up total questions
-    //         Map<Long, Integer> totalQuestionsMap = targetGame.getTotalQuestionsMap();
-    //         if (totalQuestionsMap.containsKey(userId)) {
-    //             int totalQuestions = totalQuestionsMap.get(userId);
-    //             totalQuestionsMap.put(userId, totalQuestions + 1);
-    //             targetGame.setTotalQuestionsMap(totalQuestionsMap); 
-    //         } else {
-    //             totalQuestionsMap.put(userId, 1);
-    //             targetGame.setTotalQuestionsMap(totalQuestionsMap); 
-    //         }
-    
-    //         if(gamePostDTO.getSubmitAnswer() == generatedHintsA.keySet().iterator().next()){
-    //             //sum up correct answers
-    //             Map<Long, Integer> currentCorrectAnswersMap = targetGame.getCorrectAnswersMap();
-    //             if (currentCorrectAnswersMap.containsKey(userId)) {
-    //                 int currentCorrect = currentCorrectAnswersMap.get(userId);
-    //                 currentCorrectAnswersMap.put(userId, currentCorrect + 1); 
-    //                 targetGame.setCorrectAnswersMap(currentCorrectAnswersMap);
-    //             } else {
-    //                 currentCorrectAnswersMap.put(userId, 1);
-    //                 targetGame.setCorrectAnswersMap(currentCorrectAnswersMap);
-    //             }
-    //             //sum up total score
-    //             Map<Long, Integer> scoreBoardMap = targetGame.getScoreBoard();
-    //             int currentscore = scoreBoardMap.get(userId);
-    //             scoreBoardMap.put(userId, currentscore + (100-(gamePostDTO.getHintUsingNumber()-1))); 
-    //             targetGame.setScoreBoard(scoreBoardMap);
-    //         } 
+    // public void userExitGame(Long userId){
+    //     Game targetGame = userRepository.findByUserId(userId).getGame();
+    //     if(userId != targetGame.getOwnerId()){
+    //         log.info("gameId: ", targetGame.getGameId());
+    //         targetGame.removePlayer(userRepository.findByUserId(userId));
+    //         targetGame.setRealPlayersNumber(targetGame.getRealPlayersNumber()-1);
     //         gameRepository.save(targetGame);
     //         gameRepository.flush();
     
-    //         generatedHintsA=generatedHintsB;
-    //         generatedHintsB = utilService.generateClues(targetGame.getHintsNumber());
+    //         User targetUser = userRepository.findByUserId(userId);
+    //         targetUser.setGame(null);
+    //         userRepository.save(targetUser);
+    //         userRepository.flush();
     
-    //         GameGetDTO gameHintDTO = new GameGetDTO();
+    //         List<User> players = getGamePlayers(targetGame.getGameId());
+    //         messagingTemplate.convertAndSend("/topic/ready/" + targetGame.getGameId() + "/players", players);
+    //         log.info("websocket send!");
+    //     }
+    //     else if(targetGame.getRealPlayersNumber()==1){
+    //         gameRepository.deleteByGameId(targetGame.getGameId());
+    //         gameRepository.flush();
     
-    //         gameHintDTO.setHints(generatedHintsA.values().iterator().next());
-    //         return gameHintDTO; 
+    //         User targetUser = userRepository.findByUserId(userId);
+    //         targetUser.setGame(null);
+    //         userRepository.save(targetUser);
+    //         userRepository.flush();
+    
+    //         List<User> players = getGamePlayers(targetGame.getGameId());
+    //         messagingTemplate.convertAndSend("/topic/ready/" + targetGame.getGameId() + "/players", players);
+    //         log.info("websocket send!");
+    
+    //     }
+    //     else{
+    //         targetGame.removePlayer(userRepository.findByUserId(userId));
+    //         targetGame.setRealPlayersNumber(targetGame.getRealPlayersNumber()-1);
+    //         targetGame.setOwnerId((targetGame.getPlayers()).get(0));
+    //         gameRepository.save(targetGame);
+    //         gameRepository.flush();
+    
+    //         User targetUser = userRepository.findByUserId(userId);
+    //         targetUser.setGame(null);
+    //         userRepository.save(targetUser);
+    //         userRepository.flush();
+    
+    //         List<User> players = getGamePlayers(targetGame.getGameId());
+    //         messagingTemplate.convertAndSend("/topic/ready/" + targetGame.getGameId() + "/players", players);
+    //         log.info("websocket send!");
+    //     }
+    // }
+    
+    // public List<User> getGamePlayers(Long gameId){
+    //     Game gameJoined = gameRepository.findBygameId(gameId);
+    //     List<Long> allPlayers = gameJoined.getPlayers();
+    
+    //     List<User> players = new ArrayList<>();
+    //     for (Long userId : allPlayers) {
+    //         players.add(userRepository.findByUserId(userId));
+    //     }
+    //     return players;
+    //     //
+    //     //      List<UserGetDTO> allPlayersDTOs = new ArrayList<>();
+    //     //
+    //     //      for (Long userId : allPlayers) {
+    //     //        allPlayersDTOs.add(DTOMapper.INSTANCE.convertEntityToUserGetDTO(userRepository.findByUserId(userId)));
+    //     //      }
+    //     //      return allPlayersDTOs;
+    
+    // }
+    
+    
+    // public void startGame(Long gameId){
+    //     Game gameToStart = gameRepository.findBygameId(gameId);
+        
+    //     //set time
+    //     LocalDateTime now = LocalDateTime.now();    
+    //     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy, HH:mm");
+    //     gameToStart.setGameCreationDate(now.format(formatter));
+        
+    //     //set scoreBoard
+        
+    //     (gameToStart.getScoreBoard()).put(gameToStart.getOwnerId(), 0);
+    //     for (Long userId : gameToStart.getPlayers()) {
+    //         User player = userRepository.findByUserId(userId);
+    //         if (player == null) {
+    //             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, (userRepository.findByUserId(userId)).getUsername() + " is not found");
+    //         }
+    //         (gameToStart.getScoreBoard()).put(userId, 0); 
+    //     }
+        
+    //     generatedHintsA = utilService.generateClues(gameToStart.getHintsNumber());
+    //     generatedHintsB = utilService.generateClues(gameToStart.getHintsNumber());
+        
+    //     GameGetDTO gameHintDTO = new GameGetDTO();
+        
+    //     gameHintDTO.setHints(generatedHintsA.values().iterator().next());
+    //     gameHintDTO.setTime(gameToStart.getTime());
+        
+    //     messagingTemplate.convertAndSend("/topic/start/" + gameId + "/hints", gameHintDTO);
+    //     log.info("websocket send!");
+        
+    // }
+    
+    // public GameGetDTO processingAnswer(GamePostDTO gamePostDTO, Long userId){
+    
+    //     //judge right or wrong and update game
+    //     Game targetGame = gameRepository.findBygameId(gamePostDTO.getGameId());
+    //     //sum up total questions
+    //     Map<Long, Integer> totalQuestionsMap = targetGame.getTotalQuestionsMap();
+    //     if (totalQuestionsMap.containsKey(userId)) {
+    //         int totalQuestions = totalQuestionsMap.get(userId);
+    //         totalQuestionsMap.put(userId, totalQuestions + 1);
+    //         targetGame.setTotalQuestionsMap(totalQuestionsMap); 
+    //     } else {
+    //         totalQuestionsMap.put(userId, 1);
+    //         targetGame.setTotalQuestionsMap(totalQuestionsMap); 
+    //     }
+    
+    //     if(gamePostDTO.getSubmitAnswer() == generatedHintsA.keySet().iterator().next()){
+    //         //sum up correct answers
+    //         Map<Long, Integer> currentCorrectAnswersMap = targetGame.getCorrectAnswersMap();
+    //         if (currentCorrectAnswersMap.containsKey(userId)) {
+    //             int currentCorrect = currentCorrectAnswersMap.get(userId);
+    //             currentCorrectAnswersMap.put(userId, currentCorrect + 1); 
+    //             targetGame.setCorrectAnswersMap(currentCorrectAnswersMap);
+    //         } else {
+    //             currentCorrectAnswersMap.put(userId, 1);
+    //             targetGame.setCorrectAnswersMap(currentCorrectAnswersMap);
+    //         }
+    //         //sum up total score
+    //         Map<Long, Integer> scoreBoardMap = targetGame.getScoreBoard();
+    //         int currentscore = scoreBoardMap.get(userId);
+    //         scoreBoardMap.put(userId, currentscore + (100-(gamePostDTO.getHintUsingNumber()-1))); 
+    //         targetGame.setScoreBoard(scoreBoardMap);
+    //     } 
+    //     gameRepository.save(targetGame);
+    //     gameRepository.flush();
+    
+    //     generatedHintsA=generatedHintsB;
+    //     generatedHintsB = utilService.generateClues(targetGame.getHintsNumber());
+    
+    //     GameGetDTO gameHintDTO = new GameGetDTO();
+    
+    //     gameHintDTO.setHints(generatedHintsA.values().iterator().next());
+    //     return gameHintDTO; 
+    
+    // }
+    
+    // public void submitScores(Long gameId,Map<Long, Integer> scoreMap, Map<Long, Integer> correctAnswersMap, Map<Long, Integer> totalQuestionsMap) {
+    //     Game game = gameRepository.findBygameId(gameId);
+    
+    //     if (game == null) {
+    //         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found");
+    //     }
+    
+    //     // update all users
+    //     for (Long userId : scoreMap.keySet()) {
+    //         Integer score = scoreMap.get(userId);
+    //         Integer correct = correctAnswersMap.getOrDefault(userId, 0);
+    //         Integer total = totalQuestionsMap.getOrDefault(userId, 0);
+    //         String summary = correct + " of " + total + " correct";
+    
+    //         game.updateScore(userId, score);
+    //         game.getCorrectAnswersMap().put(userId, correct);
+    //         game.getTotalQuestionsMap().put(userId, total);
+    //         game.getResultSummaryMap().put(userId, summary);
     
     //     }
     
-    //     public void submitScores(Long gameId,Map<Long, Integer> scoreMap, Map<Long, Integer> correctAnswersMap, Map<Long, Integer> totalQuestionsMap) {
-    //         Game game = gameRepository.findBygameId(gameId);
-    
-    //         if (game == null) {
-    //             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found");
-    //         }
-    
-    //         // update all users
-    //         for (Long userId : scoreMap.keySet()) {
-    //             Integer score = scoreMap.get(userId);
-    //             Integer correct = correctAnswersMap.getOrDefault(userId, 0);
-    //             Integer total = totalQuestionsMap.getOrDefault(userId, 0);
-    //             String summary = correct + " of " + total + " correct";
-    
-    //             game.updateScore(userId, score);
-    //             game.getCorrectAnswersMap().put(userId, correct);
-    //             game.getTotalQuestionsMap().put(userId, total);
-    //             game.getResultSummaryMap().put(userId, summary);
-    
-    //         }
-    
-    //         // end
-    //         if (game.getScoreBoard().size() >= game.getRealPlayersNumber()) {
-    //             game.setEndTime(LocalDateTime.now());
-    //             log.info("Game " + gameId + " ended automatically. All players submitted scores.");
-    //         }
-    
-    //         gameRepository.save(game);
+    //     // end
+    //     if (game.getScoreBoard().size() >= game.getRealPlayersNumber()) {
+    //         game.setEndTime(LocalDateTime.now());
+    //         log.info("Game " + gameId + " ended automatically. All players submitted scores.");
     //     }
     
-    //     public List<GameGetDTO> getGamesByUser(Long userId) {
-    //         User user = userRepository.findById(userId)
-    //         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-    //         String username = user.getUsername();
+    //     gameRepository.save(game);
+    // }
     
-    //         return gameRepository.findByPlayersContaining(username).stream()
-    //         .filter(game -> game.getEndTime() != null)
-    //         .map(game -> {
-    //             GameGetDTO dto = DTOMapper.INSTANCE.convertGameEntityToGameGetDTO(game);
-    //             dto.setCorrectAnswers(game.getCorrectAnswersMap().get(userId));
-    //             dto.setTotalQuestions(game.getTotalQuestionsMap().get(userId));
-    //             dto.setResultSummary(game.getResultSummaryMap().get(userId));
-    //             return dto;
-    //         })
-    //         .collect(Collectors.toList());
-    //     }
+    // public List<GameGetDTO> getGamesByUser(Long userId) {
+    //     User user = userRepository.findById(userId)
+    //     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    //     String username = user.getUsername();
     
-    //     public List<GameGetDTO> getLeaderboard() {
-    //         List<Game> allGames = gameRepository.findAll();
-    //         Map<Long, Integer> userScoreMap = new HashMap<>();
+    //     return gameRepository.findByPlayersContaining(username).stream()
+    //     .filter(game -> game.getEndTime() != null)
+    //     .map(game -> {
+    //         GameGetDTO dto = DTOMapper.INSTANCE.convertGameEntityToGameGetDTO(game);
+    //         dto.setCorrectAnswers(game.getCorrectAnswersMap().get(userId));
+    //         dto.setTotalQuestions(game.getTotalQuestionsMap().get(userId));
+    //         dto.setResultSummary(game.getResultSummaryMap().get(userId));
+    //         return dto;
+    //     })
+    //     .collect(Collectors.toList());
+    // }
     
-    //         for (Game game : allGames) {
-    //             if (game.getEndTime() == null || game.getScoreBoard() == null) {
-    //                 continue;
-    //             }
-    //             for (Map.Entry<Long, Integer> entry : game.getScoreBoard().entrySet()) {
-    //                 Long userId = entry.getKey();
-    //                 Integer score = entry.getValue();
-    //                 userScoreMap.put(userId, userScoreMap.getOrDefault(userId, 0) + score);
-    //             }
-    //         }
+//     public List<GameGetDTO> getLeaderboard() {
+//     List<Game> allGames = gameRepository.findAll();
+//     Map<Long, Integer> userScoreMap = new HashMap<>();
     
-    //         List<GameGetDTO> leaderboard = new ArrayList<>();
-    //         for (Map.Entry<Long, Integer> entry : userScoreMap.entrySet()) {
-    //             Long userId = entry.getKey();
-    //             Integer totalScore = entry.getValue();
+//     for (Game game : allGames) {
+//         if (game.getEndTime() == null || game.getScoreBoard() == null) {
+//             continue;
+//         }
+//         for (Map.Entry<Long, Integer> entry : game.getScoreBoard().entrySet()) {
+//             Long userId = entry.getKey();
+//             Integer score = entry.getValue();
+//             userScoreMap.put(userId, userScoreMap.getOrDefault(userId, 0) + score);
+//         }
+//     }
     
-    //             User user = userRepository.findById(userId)
-    //             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+//     List<GameGetDTO> leaderboard = new ArrayList<>();
+//     for (Map.Entry<Long, Integer> entry : userScoreMap.entrySet()) {
+//         Long userId = entry.getKey();
+//         Integer totalScore = entry.getValue();
+        
+//         User user = userRepository.findById(userId)
+//         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        
+//         GameGetDTO dto = new GameGetDTO();
+//         dto.setUserId(userId);
+//         dto.setUsername(user.getUsername());
+//         dto.setTotalScore(totalScore);
+//         leaderboard.add(dto);
+//     }
     
-    //             GameGetDTO dto = new GameGetDTO();
-    //             dto.setUserId(userId);
-    //             dto.setUsername(user.getUsername());
-    //             dto.setTotalScore(totalScore);
-    //             leaderboard.add(dto);
-    //         }
+//     leaderboard.sort((a, b) -> b.getTotalScore().compareTo(a.getTotalScore()));
     
-    //         leaderboard.sort((a, b) -> b.getTotalScore().compareTo(a.getTotalScore()));
-    
-    //         return leaderboard;
-    //     }
+//     return leaderboard;
+// }
 }

@@ -11,6 +11,19 @@ import java.io.Serializable;
 @Table(name = "PLAYER")
 public class Player implements Serializable {
 
+    // Methods
+    public void assignPlayerName() {
+        if (this.user != null) {
+            this.playerName = this.user.getUsername();
+        } else {
+            if (this.playerId != null) {
+                this.playerName = "Guest_" + this.playerId;
+            } else {
+                throw new IllegalStateException("Player ID must be assigned before setting guest name.");
+            }
+        }
+    }
+
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -42,6 +55,17 @@ public class Player implements Serializable {
     @ManyToOne
     @JoinColumn(name = "teamId", nullable = true)
     private Team team;
+
+    @Column(nullable = false, unique = true)
+    private String playerName;
+
+    public String getPlayerName() {
+        return playerName;
+    }
+
+    public void setPlayerName(String playerName) {
+        this.playerName = playerName;
+    }
 
     @Column(nullable = false)
     private GameMode modeType = GameMode.SOLO;

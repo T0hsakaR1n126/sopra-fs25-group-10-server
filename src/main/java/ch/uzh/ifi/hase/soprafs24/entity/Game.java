@@ -38,7 +38,10 @@ public class Game implements Serializable {
     
     @Column(nullable = true)
     private Long ownerId;
-    
+
+    @Column(nullable = true)
+    private Long userId;
+
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Player> players = new ArrayList<>();
     
@@ -51,7 +54,7 @@ public class Game implements Serializable {
     @Column(nullable = false)
     private int hintsNumber;
     
-    @Column(nullable = false)
+    @Column(nullable = true)
     private int playersNumber;
     
     @Column(nullable = false)
@@ -105,6 +108,15 @@ public class Game implements Serializable {
     
     public void setGameId(Long gameId) {
         this.gameId = gameId;
+    }
+
+    //addding user id for join purposes
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public GameAccessType getAccessType() {
