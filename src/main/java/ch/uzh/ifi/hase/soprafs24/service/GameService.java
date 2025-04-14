@@ -231,7 +231,7 @@ public class GameService {
         playerRepository.flush();
         
         // Notify via WebSocket
-        List<Player> players = playerRepository.findByGameId(targetGame.getGameId());
+        List<Player> players = playerRepository.findByGame_GameId(targetGame.getGameId());
         messagingTemplate.convertAndSend("/topic/ready/" + targetGame.getGameId() + "/players", players);
         
         log.info("Player {} joined game {}", newPlayer.getPlayerId(), targetGame.getGameId());

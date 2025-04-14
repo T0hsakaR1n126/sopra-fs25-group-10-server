@@ -4,6 +4,8 @@ public class GameCreatePostDTO {
 
     private Long gameId;
 
+    private Long userId;
+
     private String gameName;
 
     private String owner;
@@ -49,6 +51,15 @@ public class GameCreatePostDTO {
       public void setPlayersNumber(int playersNumber) {
         this.playersNumber = playersNumber;
       }
+
+      
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
       
       public int getTime() {
         return time;

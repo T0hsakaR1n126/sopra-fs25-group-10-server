@@ -11,6 +11,7 @@ import java.util.Map;
 public class GamePostDTO {
     
     // private Long gameId;
+    private Long userId;
     
     private String gameName;
     
@@ -43,6 +44,14 @@ public class GamePostDTO {
     // public void setGameId(Long gameId) {
     //     this.gameId = gameId;
     // }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
     
     public String getGameName() {
         return gameName;

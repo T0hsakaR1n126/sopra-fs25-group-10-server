@@ -5,10 +5,24 @@ plugins {
     id 'idea'
     id 'jacoco'
     id "org.sonarqube" version "6.0.1.5171"
+    id "io.swagger.core.v3.swagger-gradle-plugin" version "2.2.30"
+
 }
 
 group 'ch.uzh.ifi.hasel'
 version '1.0.0'
+
+
+swagger {
+    resolve {
+        outputFileName = 'MapMasterAPI' // Replace with your desired file name
+        outputFormat = 'JSON' // or 'YAML' or 'JSONANDYAML'
+        prettyPrint = true
+        resourcePackages = ['ch.uzh.ifi.hase.soprafs24.controller'] // Replace with your API resource packages
+        outputDir = file("$buildDir/swagger") // Where to save the generated spec
+        classpath = sourceSets.main.runtimeClasspath // Important!
+    }
+}
 
 java {
     toolchain {
@@ -33,7 +47,6 @@ springBoot {
 }
 
 dependencies {
-    implementation 'org.springdoc:springdoc-openapi-ui:1.6.0'
     implementation 'org.mapstruct:mapstruct:1.3.1.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.3.1.Final'
     testAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.3.1.Final'
