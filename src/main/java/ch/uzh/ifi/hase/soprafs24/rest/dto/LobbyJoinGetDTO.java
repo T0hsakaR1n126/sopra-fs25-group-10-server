@@ -1,9 +1,11 @@
 package ch.uzh.ifi.hase.soprafs24.rest.dto;
 
-public class GameJoinDTO {
+public class LobbyJoinGetDTO {
     private Long userId;
     private String password;
     private String guestName;
+    private Long teamId;
+    private String teamName;
     
     public Long getUserId() {
         return userId;
@@ -23,6 +25,19 @@ public class GameJoinDTO {
     }
     public void setGuestName(String guestName) {
         this.guestName = guestName;
+    }
+
+    public Long getTeamId() {
+        return teamId;
+    }
+    public void setTeamId(Long teamId) {
+        this.teamId = teamId;
+    }
+    public String getTeamName() {
+        return teamName;
+    }
+    public void setTeamName(String teamName) {
+        this.teamName = teamName;
     }
     
 }

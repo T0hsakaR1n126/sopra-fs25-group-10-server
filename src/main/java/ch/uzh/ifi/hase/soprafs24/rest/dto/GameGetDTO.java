@@ -31,13 +31,13 @@ public class GameGetDTO {
 
     private String gameName;
 
-    private int time;
+    private Integer time;
 
     private GameAccessType accessType;
 
-    private int maxPlayersNumber;
+    private Integer maxPlayersNumber;
 
-    private int currentPlayersNumber;
+    private Integer currentPlayersNumber;
 
     private String password;
 
@@ -125,7 +125,7 @@ public class GameGetDTO {
         this.accessType = accessType;
     }
 
-    public int getMaxPlayersNumber() {
+    public Integer getMaxPlayersNumber() {
         return maxPlayersNumber;
     }
     
@@ -133,11 +133,11 @@ public class GameGetDTO {
         this.maxPlayersNumber = maxPlayersNumber;
     }     
 
-      public int getCurrentPlayersNumber() {
+      public Integer getCurrentPlayersNumber() {
         return currentPlayersNumber;
     }
     
-    public void setCurrentPlayersNumber(int currentPlayersNumber) {
+    public void setCurrentPlayersNumber(Integer currentPlayersNumber) {
         this.currentPlayersNumber = currentPlayersNumber;
     }   
 
@@ -149,11 +149,11 @@ public class GameGetDTO {
         this.scoreBoard = scoreBoard;
     }
 
-    public int getTime() {
+    public Integer getTime() {
         return time;
     }
     
-    public void setTime(int time) {
+    public void setTime(Integer time) {
         this.time = time;
     }
 

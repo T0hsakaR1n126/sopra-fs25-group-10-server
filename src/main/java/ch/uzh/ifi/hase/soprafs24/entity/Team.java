@@ -1,5 +1,4 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
-
 import ch.uzh.ifi.hase.soprafs24.constant.TeamStatus;
 
 import javax.persistence.*;
@@ -18,7 +17,7 @@ public class Team implements Serializable {
     private Long teamId;
     
     @Column(nullable = false)
-    private String teamName;
+    private String teamName = "Not yet assigned";
     
     @Enumerated(EnumType.STRING)
     private TeamStatus teamStatus;
@@ -31,12 +30,9 @@ public class Team implements Serializable {
     private List<Player> players = new ArrayList<>();
     
     @Column(nullable = false)
-    private int desiredTeamSize;
+    private Integer desiredTeamSize;
     
-    @Column(nullable = false)
-    private int TeamSize;
-
-   //getters and setters
+    //getters and setters
     public Long getTeamId() {
         return teamId;
     }
@@ -77,22 +73,18 @@ public class Team implements Serializable {
         this.players = players;
     }
     
-    public int getDesiredTeamSize() {
+    public Integer getDesiredTeamSize() {
         return desiredTeamSize;
     }
     
-    public void setDesiredTeamSize(int desiredTeamSize) {
+    public void setDesiredTeamSize(Integer desiredTeamSize) {
         this.desiredTeamSize = desiredTeamSize;
     }
     
-    public int getTeamSize() {
-        return TeamSize;
+    @Transient
+    public Integer getTeamSize() {
+        return players.size();
     }
-    
-    public void setTeamSize(int teamSize) {
-        this.TeamSize = players.size();
-    }
-    
     
     public void addPlayer(Player player) {
         this.players.add(player);
@@ -108,8 +100,20 @@ public class Team implements Serializable {
         return getTeamSize() >= desiredTeamSize;
     }
     
-    //gets scores of the team overall
-    public int getScore() {
+    public Integer getScore() {
         return players.stream().mapToInt(Player::getScore).sum();
+    }
+    
+    //callback to set the team name after persisting the team entity
+    @PostPersist
+    private void setTeamNameAfterPersist() {
+        this.teamName = "Team " + this.teamId;
+    }
+
+    //team score calculation
+    public Integer getTotalScore() {
+        return players.stream()
+            .mapToInt(Player::getScore)
+            .sum();
     }
 }

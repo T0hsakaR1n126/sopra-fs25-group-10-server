@@ -3,10 +3,14 @@ package ch.uzh.ifi.hase.soprafs24.controller;
 
 import ch.uzh.ifi.hase.soprafs24.constant.GameMode;
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
+import ch.uzh.ifi.hase.soprafs24.entity.Player;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameGetDTO;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.GameJoinDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.LobbyJoinGetDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.LobbyJoinPostDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GamePostDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.GameStartDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserPostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
@@ -83,12 +87,12 @@ public class GameController {
     @PostMapping("/lobby/{gameId}/join")
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public void joinGame(@PathVariable Long gameId,
-    @RequestBody(required = false) GameJoinDTO joinDTO) {
+    public PlayerDTO joinGame(@PathVariable Long gameId,
+    @RequestBody(required = false) LobbyJoinPostDTO joinDTO) {
         Long userId = joinDTO != null ? joinDTO.getUserId() : null;
         String password = joinDTO != null ? joinDTO.getPassword() : null;
         
-        gameService.userJoinGame(gameId, userId, password);
+        return DTOMapper.INSTANCE.convertPlayerToPlayerDTO(gameService.userJoinGame(gameId, userId, password));
     }
     
     @PutMapping("/lobbyOut/{playerId}")
@@ -111,12 +115,11 @@ public class GameController {
     //     return allPlayersDTOs;
     //   }
     
-    //   @PutMapping("/start/{gameId}")
-    //   @ResponseStatus(HttpStatus.OK)
-    //   @ResponseBody
-    //   public void startGame(@PathVariable Long gameId) {
-    //     gameService.startGame(gameId);
-    //   }
+    @PutMapping("/start/{gameId}")
+    @ResponseStatus(HttpStatus.OK)
+    public void startGame(@PathVariable Long gameId, @RequestBody  GameStartDTO player) {
+        gameService.startGame(gameId, player);
+    }
     
     //   @PutMapping("/games/{gameId}/end")
     //   @ResponseStatus(HttpStatus.NO_CONTENT)

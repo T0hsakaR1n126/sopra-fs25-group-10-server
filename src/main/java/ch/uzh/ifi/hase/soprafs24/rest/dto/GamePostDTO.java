@@ -17,9 +17,9 @@ public class GamePostDTO {
     
     private Long ownerId;
     
-    private int maxPlayersNumber;
+    private Integer maxPlayersNumber;
     
-    private int time;
+    private Integer time;
     
     private GameMode modeType;
     
@@ -27,7 +27,7 @@ public class GamePostDTO {
     
     private String password;
     
-    // private int hintUsingNumber;
+    // private Integer hintUsingNumber;
     
     // private Country submitAnswer;
     
@@ -69,19 +69,19 @@ public class GamePostDTO {
         this.ownerId = ownerId;
     }
     
-    public int getMaxPlayersNumber() {
+    public Integer getMaxPlayersNumber() {
         return maxPlayersNumber;
     }
     
-    public void setPlayersNumber(int maxPlayersNumber) {
+    public void setPlayersNumber(Integer maxPlayersNumber) {
         this.maxPlayersNumber = maxPlayersNumber;
     }
     
-    public int getTime() {
+    public Integer getTime() {
         return time;
     }
     
-    public void setTime(int time) {
+    public void setTime(Integer time) {
         this.time = time;
     }
     

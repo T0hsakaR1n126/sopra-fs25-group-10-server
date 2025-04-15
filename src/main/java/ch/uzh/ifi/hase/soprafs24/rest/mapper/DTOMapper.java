@@ -1,12 +1,15 @@
 package ch.uzh.ifi.hase.soprafs24.rest.mapper;
 
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
+import ch.uzh.ifi.hase.soprafs24.entity.Player;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameGetDTO;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.GameJoinDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.LobbyJoinGetDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GamePostDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.GameStartDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserPostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserProfileDTO;
@@ -75,10 +78,10 @@ public interface DTOMapper {
     GameGetDTO convertGameEntityToGameGetDTO(Game game);
     
     
-    //GameJoinDTO mapping
+    //GameJoinPostDTO mapping
     @Mapping(source = "userId", target = "userId")
     @Mapping(source = "password", target = "password")
-    Game mapGameJoinDTOToRequest(GameJoinDTO gameJoinDTO);
+    Game mapGameJoinPostDTOToRequest(LobbyJoinGetDTO gameJoinDTO);
     
     // Profile mappings
     @Mapping(source = "username", target = "username")
@@ -86,5 +89,17 @@ public interface DTOMapper {
     @Mapping(source = "email", target = "email")
     @Mapping(source = "bio", target = "bio")
     User convertUserProfileDTOtoEntity(UserProfileDTO userProfileDTO);
+
+    @Mapping(source = "playerId", target = "playerId")
+    @Mapping(source = "playerName", target = "playerName")
+    @Mapping(source = "team.teamId", target = "teamId")
+    @Mapping(source = "team.teamName", target = "teamName")
+    @Mapping(source = "user.userId", target = "userId")
+    @Mapping(source = "game.gameId", target = "gameId")
+    PlayerDTO convertPlayerToPlayerDTO(Player user);
     
+    @Mapping(source = "playerId", target = "playerId")
+    // @Mapping(source = "game.gameId", target = "gameId")
+    @Mapping(source = "token", target = "token")
+    GameStartDTO convertPlayerToGameStartDTO(Player player);
 }

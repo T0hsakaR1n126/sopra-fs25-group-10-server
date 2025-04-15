@@ -16,7 +16,18 @@ public class Player implements Serializable {
     @Id
     @GeneratedValue
     private Long playerId;
+
+    @Column(nullable = false, unique = true)
+    private String token;
     
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
     @ManyToOne
     @JoinColumn(name = "userId", nullable = true)  // nullable for guests
     private User user;
@@ -30,7 +41,7 @@ public class Player implements Serializable {
     private PlayerStatus playerStatus = PlayerStatus.WAITING;
     
     @Column(nullable = false)
-    private int score = 0;
+    private Integer score = 0;
     
     @Column(nullable = false)
     private boolean isGuest = false;
@@ -58,10 +69,14 @@ public class Player implements Serializable {
     private GameMode modeType = GameMode.SOLO;
     
     @Column(nullable = false)
-    private int totalHints;
+    private Integer totalHints;
     
-    @Column(nullable = false)
-    private int hintsLeft;
+    @Column(nullable = true)
+    private Integer hintsLeft;
+
+    public Player() {
+        // Default constructor
+    }
     
     public Player(User user, Game game) {
         if (user != null) {
@@ -79,15 +94,12 @@ public class Player implements Serializable {
     }
     
     // Methods
-    public void assignPlayerName() {
+    @PostPersist
+    private void setPlayerNameAfterPersist() {
         if (this.user != null) {
             this.playerName = this.user.getUsername();
         } else {
-            if (this.playerId != null) {
-                this.playerName = "Guest_" + this.playerId;
-            } else {
-                throw new IllegalStateException("Player ID must be assigned before setting guest name.");
-            }
+            this.playerName = "Guest_" + this.playerId;
         }
     }
 
@@ -123,11 +135,11 @@ public class Player implements Serializable {
         this.playerStatus = playerStatus;
     }
     
-    public int getScore() {
+    public Integer getScore() {
         return score;
     }
     
-    public void setScore(int score) {
+    public void setScore(Integer score) {
         this.score = score;
     }
     
@@ -135,6 +147,10 @@ public class Player implements Serializable {
         return isGuest;
     }
     
+    public void addScore(Integer points) {
+        this.score += points;
+    }
+
     public void setGuest(boolean guest) {
         isGuest = guest;
     }
@@ -163,7 +179,7 @@ public class Player implements Serializable {
         this.modeType = modeType;
     }
     
-    public int getTotalHints() {
+    public Integer getTotalHints() {
         return totalHints;
     }
     
@@ -179,7 +195,7 @@ public class Player implements Serializable {
         }
     }
     
-    public int getHintsLeft() {
+    public Integer getHintsLeft() {
         return hintsLeft;
     }
 }

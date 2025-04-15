@@ -44,14 +44,17 @@ public class Game implements Serializable {
 
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Player> players = new ArrayList<>();
-    
+
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Team> teams = new ArrayList<>();
+
     @ElementCollection
     @CollectionTable(name = "scoreboard", joinColumns = @JoinColumn(name = "gameId"))
     @MapKeyColumn(name = "userId")
     @Column(name = "userscore")
     private Map<Long, Integer> scoreBoard = new HashMap<>();
     
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Integer maxHints;
     
     @Column(nullable = true)
@@ -60,14 +63,14 @@ public class Game implements Serializable {
     @Column(nullable = false)
     private GameStatus gameStatus;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private GameAccessType accessType;
 
     @Column(nullable = false)
-    private int currentPlayersNumber;
+    private Integer currentPlayersNumber;
     
     @Column(nullable = false)
-    private int time;
+    private Integer time;
     
     @Column(nullable = false)
     private LocalDateTime gameCreationDate;
@@ -161,6 +164,14 @@ public class Game implements Serializable {
     public void setPlayers(List<Player> players) {
         this.players = players;
     }
+
+    public List<Team> getTeams() {
+        return teams;
+    }
+
+    public void setTeams(List<Team> teams) {
+        this.teams = teams;
+    }
     
     //add player
     public void addPlayer(Player player) {
@@ -183,7 +194,7 @@ public class Game implements Serializable {
     }
     
     // update scoreBoard
-    public void updateScore(Long userId, int score) {
+    public void updateScore(Long userId, Integer score) {
         scoreBoard.put(userId, score);
     }
     
@@ -197,35 +208,35 @@ public class Game implements Serializable {
         return scoreBoard.remove(userId);
     }
     
-    public int getMaxHints() {
+    public Integer getMaxHints() {
         return maxHints;
     }
     
-    public void setMaxHints(int maxHints) {
+    public void setMaxHints(Integer maxHints) {
         this.maxHints = maxHints;
     }
     
-    public int getMaxPlayersNumber() {
+    public Integer getMaxPlayersNumber() {
         return maxPlayersNumber;
     }
     
-    public void setMaxPlayersNumber(int maxPlayersNumber) {
+    public void setMaxPlayersNumber(Integer maxPlayersNumber) {
         this.maxPlayersNumber = maxPlayersNumber;
     }
     
-    public int getCurrentPlayersNumber() {
+    public Integer getCurrentPlayersNumber() {
         return currentPlayersNumber;
     }
     
-    public void setCurrentPlayersNumber(int currentPlayersNumber) {
+    public void setCurrentPlayersNumber(Integer currentPlayersNumber) {
         this.currentPlayersNumber = currentPlayersNumber;
     }
     
-    public int getTime() {
+    public Integer getTime() {
         return time;
     }
     
-    public void setTime(int time) {
+    public void setTime(Integer time) {
         this.time = time;
     }
     
