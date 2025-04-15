@@ -3,8 +3,10 @@ package ch.uzh.ifi.hase.soprafs24.rest.dto;
 import java.util.Map;
 
 import ch.uzh.ifi.hase.soprafs24.constant.GameAccessType;
+import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
 
 import java.util.List;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class GameGetDTO {
@@ -19,9 +21,13 @@ public class GameGetDTO {
 
     private Integer totalScore;
 
+    private LocalDateTime startTime;
+
     private Long gameId;
 
-    private Map<Long, String> scoreBoard;
+    private GameStatus gameStatus;
+
+    private Map<Long, Integer> scoreBoard;
 
     private String gameName;
 
@@ -29,9 +35,9 @@ public class GameGetDTO {
 
     private GameAccessType accessType;
 
-    private int playersNumber;
+    private int maxPlayersNumber;
 
-    private int realPlayersNumber;
+    private int currentPlayersNumber;
 
     private String password;
 
@@ -41,6 +47,10 @@ public class GameGetDTO {
 
     private Integer finalScore;
 
+    private Integer maxHints;
+
+    private LocalDateTime gameCreationDate;
+
     private String resultSummary;
 
     private Integer totalQuestions;
@@ -48,6 +58,32 @@ public class GameGetDTO {
     private Integer correctAnswers;
 
     private List<Map<String, Object>> hints;
+
+    private LocalDateTime starTime;
+
+    public GameStatus getGameStatus() {
+        return gameStatus;
+    }
+
+    public void setGameStatus(GameStatus gameStatus) {
+        this.gameStatus = gameStatus;
+    }
+    
+    public LocalDateTime getStarTime() {
+        return starTime;
+    }
+
+    public void setStarTime(LocalDateTime starTime) {
+        this.starTime = starTime;
+    }
+
+    public LocalDateTime getGameCreationDate() {
+        return gameCreationDate;
+    }
+
+    public void setGameCreationDate(LocalDateTime gameCreationDate) {
+        this.gameCreationDate = gameCreationDate;
+    }
 
     public Long getGameId() {
         return gameId;
@@ -79,15 +115,7 @@ public class GameGetDTO {
 
     public void setOwnerName(String ownerName) {
         this.ownerName = ownerName;
-    }
-
-    public int getPlayersNumber() {
-        return playersNumber;
-    }
-    
-    public void setPlayersNumber(int playersNumber) {
-        this.playersNumber = playersNumber;
-    }     
+    }   
     
     public GameAccessType getAccessType() {
         return accessType;
@@ -97,27 +125,27 @@ public class GameGetDTO {
         this.accessType = accessType;
     }
 
-    public int getPlayerNumbers() {
-        return playersNumber;
+    public int getMaxPlayersNumber() {
+        return maxPlayersNumber;
     }
     
-    public void setPlayerNumbers(int playersNumber) {
-        this.playersNumber = playersNumber;
+    public void setMaxPlayersNumber(Integer maxPlayersNumber) {
+        this.maxPlayersNumber = maxPlayersNumber;
     }     
 
-      public int getRealPlayersNumber() {
-        return realPlayersNumber;
+      public int getCurrentPlayersNumber() {
+        return currentPlayersNumber;
     }
     
-    public void setRealPlayersNumber(int realPlayersNumber) {
-        this.realPlayersNumber = realPlayersNumber;
+    public void setCurrentPlayersNumber(int currentPlayersNumber) {
+        this.currentPlayersNumber = currentPlayersNumber;
     }   
 
-    public Map<Long, String> getScoreBoard() {
+    public Map<Long, Integer> getScoreBoard() {
         return scoreBoard;
     }
 
-    public void setScoreBoard(Map<Long, String> scoreBoard) {
+    public void setScoreBoard(Map<Long, Integer> scoreBoard) {
         this.scoreBoard = scoreBoard;
     }
 
@@ -215,6 +243,22 @@ public class GameGetDTO {
   
     public List<Map<String, Object>> getHints(){
         return hints;
+    }
+
+    public Integer getMaxHints() {
+        return maxHints;
+    }
+
+    public void setMaxHints(Integer maxHints) {
+        this.maxHints = maxHints;
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
     }
 }
 

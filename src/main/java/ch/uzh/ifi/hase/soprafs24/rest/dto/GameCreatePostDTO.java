@@ -10,7 +10,7 @@ public class GameCreatePostDTO {
 
     private String owner;
     
-    private int playersNumber;
+    private int maxPlayersNumber;
 
     private int time;
   
@@ -44,12 +44,12 @@ public class GameCreatePostDTO {
         this.owner = owner;
     }
 
-    public int getPlayersNumber() {
-        return playersNumber;
+    public int getMaxPlayersNumber() {
+        return maxPlayersNumber;
       }
     
-      public void setPlayersNumber(int playersNumber) {
-        this.playersNumber = playersNumber;
+      public void setMaxPlayersNumber(int maxPlayersNumber) {
+        this.maxPlayersNumber = maxPlayersNumber;
       }
 
       

@@ -1,6 +1,7 @@
 package ch.uzh.ifi.hase.soprafs24.controller;
 
 
+import ch.uzh.ifi.hase.soprafs24.constant.GameMode;
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameGetDTO;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -58,18 +60,23 @@ public class GameController {
     public List<GameGetDTO> getGameLobby() {
         List<Game> allGames = gameService.getAllGames();
         
-        List<GameGetDTO> gameLobbyGetDTOs = new ArrayList<>();
-        for (Game game : allGames) {
-            gameLobbyGetDTOs.add(DTOMapper.INSTANCE.convertGameEntityToGameGetDTO(game));
-        }
+        List<GameGetDTO> gameLobbyGetDTOs = allGames.stream()
+        .filter(game -> game.getModeType() == GameMode.ONE_VS_ONE || game.getModeType() == GameMode.TEAM_VS_TEAM)
+        .map(DTOMapper.INSTANCE::convertGameEntityToGameGetDTO)
+        .collect(Collectors.toList());
+        
         return gameLobbyGetDTOs;
     }
+    
     
     @GetMapping("/game/{gameId}")
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public GameGetDTO getGameReady(Long gameId) {
+    public GameGetDTO getGameReady(@PathVariable Long gameId) {
         Game gameSelected = gameService.getGameByGameId(gameId);
+        if (gameSelected == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found");
+        }
         return DTOMapper.INSTANCE.convertGameEntityToGameGetDTO(gameSelected);
     }
     
@@ -84,11 +91,11 @@ public class GameController {
         gameService.userJoinGame(gameId, userId, password);
     }
     
-    @PutMapping("/lobbyOut/{userId}")
+    @PutMapping("/lobbyOut/{playerId}")
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public void exitGame(@PathVariable Long userId) {
-        // gameService.userExitGame(userId);
+    public void exitGame(@PathVariable Long playerId) {
+        gameService.playerExitGame(playerId);
     }
     
     //   @GetMapping("/ready/{gameId}")

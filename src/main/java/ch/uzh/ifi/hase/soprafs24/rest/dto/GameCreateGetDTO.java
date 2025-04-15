@@ -3,25 +3,25 @@ package ch.uzh.ifi.hase.soprafs24.rest.dto;
 import java.util.Map;
 
 public class GameCreateGetDTO {
-
+    
     private String owner;
-
+    
     private Long gameId;
-
+    
     private Map<String, String> scoreBoard;
-
+    
     private String gameName;
-
+    
     private String accessType;
-
-    private int playersNumber;
-
-    private int realPlayersNumber;
-
+    
+    private int maxPlayersNumber;
+    
+    private int currentPlayersNumber;
+    
     private String password;
-
+    
     private String modeType;
-
+    
     public Long getGameId() {
         return gameId;
     }
@@ -29,7 +29,7 @@ public class GameCreateGetDTO {
     public void setGameId(Long gameId) {
         this.gameId = gameId;
     }
-
+    
     public String getGameName() {
         return gameName;
     }
@@ -37,7 +37,7 @@ public class GameCreateGetDTO {
     public void setGameName(String gameName) {
         this.gameName = gameName;
     }
-
+    
     public String getOwner() {
         return owner;
     }
@@ -45,13 +45,13 @@ public class GameCreateGetDTO {
     public void setOwner(String owner) {
         this.owner = owner;
     }
-
-    public int getPlayersNumber() {
-        return playersNumber;
+    
+    public int getMaxPlayersNumber() {
+        return maxPlayersNumber;
     }
     
-    public void setPlayersNumber(int playersNumber) {
-        this.playersNumber = playersNumber;
+    public void setMaxPlayersNumber(int maxPlayersNumber) {
+        this.maxPlayersNumber = maxPlayersNumber;
     }     
     
     public String getaccessType() {
@@ -61,31 +61,23 @@ public class GameCreateGetDTO {
     public void setaccessType(String accessType) {
         this.accessType = accessType;
     }
-
-    public int getPlayerNumbers() {
-        return playersNumber;
+    
+    public int getCurrentPlayersNumber() {
+        return currentPlayersNumber;
     }
     
-    public void setPlayerNumbers(int playersNumber) {
-        this.playersNumber = playersNumber;
-    }     
-
-      public int getRealPlayersNumber() {
-        return realPlayersNumber;
-    }
-    
-    public void setRealPlayersNumber(int realPlayersNumber) {
-        this.realPlayersNumber = realPlayersNumber;
+    public void setCurrentPlayersNumber(int currentPlayersNumber) {
+        this.currentPlayersNumber = currentPlayersNumber;
     }   
-
+    
     public Map<String, String> getScoreBoard() {
         return scoreBoard;
     }
-
+    
     public void setScoreBoard(Map<String, String> scoreBoard) {
         this.scoreBoard = scoreBoard;
     }
-
+    
     public String getPassword() {
         return password;
     }
@@ -93,7 +85,7 @@ public class GameCreateGetDTO {
     public void setPassword(String password) {
         this.password = password;
     }
-
+    
     public String getModeType() {
         return modeType;
     }

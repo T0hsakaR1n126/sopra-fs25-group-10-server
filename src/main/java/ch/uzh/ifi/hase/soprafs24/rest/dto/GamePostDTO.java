@@ -17,7 +17,7 @@ public class GamePostDTO {
     
     private Long ownerId;
     
-    private int playersNumber;
+    private int maxPlayersNumber;
     
     private int time;
     
@@ -69,12 +69,12 @@ public class GamePostDTO {
         this.ownerId = ownerId;
     }
     
-    public int getPlayersNumber() {
-        return playersNumber;
+    public int getMaxPlayersNumber() {
+        return maxPlayersNumber;
     }
     
-    public void setPlayersNumber(int playersNumber) {
-        this.playersNumber = playersNumber;
+    public void setPlayersNumber(int maxPlayersNumber) {
+        this.maxPlayersNumber = maxPlayersNumber;
     }
     
     public int getTime() {

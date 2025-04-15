@@ -52,10 +52,10 @@ public class Game implements Serializable {
     private Map<Long, Integer> scoreBoard = new HashMap<>();
     
     @Column(nullable = false)
-    private int hintsNumber;
+    private Integer maxHints;
     
     @Column(nullable = true)
-    private int playersNumber;
+    private Integer maxPlayersNumber;
     
     @Column(nullable = false)
     private GameStatus gameStatus;
@@ -64,20 +64,23 @@ public class Game implements Serializable {
     private GameAccessType accessType;
 
     @Column(nullable = false)
-    private int realPlayersNumber;
+    private int currentPlayersNumber;
     
     @Column(nullable = false)
     private int time;
     
     @Column(nullable = false)
-    private String gameCreationDate;
+    private LocalDateTime gameCreationDate;
     
     @Column(nullable = false)
     private GameMode modeType;
     
     @Column(nullable = true)
     private String password;
-    
+
+    @Column(nullable = true)
+    private LocalDateTime startTime;
+
     @Column(nullable = true)
     private LocalDateTime endTime;
     
@@ -194,28 +197,28 @@ public class Game implements Serializable {
         return scoreBoard.remove(userId);
     }
     
-    public int getHintsNumber() {
-        return hintsNumber;
+    public int getMaxHints() {
+        return maxHints;
     }
     
-    public void setHintsNumber(int hintsNumber) {
-        this.hintsNumber = hintsNumber;
+    public void setMaxHints(int maxHints) {
+        this.maxHints = maxHints;
     }
     
-    public int getPlayersNumber() {
-        return playersNumber;
+    public int getMaxPlayersNumber() {
+        return maxPlayersNumber;
     }
     
-    public void setPlayersNumber(int playersNumber) {
-        this.playersNumber = playersNumber;
+    public void setMaxPlayersNumber(int maxPlayersNumber) {
+        this.maxPlayersNumber = maxPlayersNumber;
     }
     
-    public int getRealPlayersNumber() {
-        return realPlayersNumber;
+    public int getCurrentPlayersNumber() {
+        return currentPlayersNumber;
     }
     
-    public void setRealPlayersNumber(int realPlayersNumber) {
-        this.realPlayersNumber = realPlayersNumber;
+    public void setCurrentPlayersNumber(int currentPlayersNumber) {
+        this.currentPlayersNumber = currentPlayersNumber;
     }
     
     public int getTime() {
@@ -226,11 +229,11 @@ public class Game implements Serializable {
         this.time = time;
     }
     
-    public String getGameCreationDate() {
+    public LocalDateTime getGameCreationDate() {
         return gameCreationDate;
     }
     
-    public void setGameCreationDate(String gameCreationDate) {
+    public void setGameCreationDate(LocalDateTime gameCreationDate) {
         this.gameCreationDate = gameCreationDate;
     }
     
@@ -288,5 +291,13 @@ public class Game implements Serializable {
     
     public void setCorrectAnswersMap(Map<Long, Integer> correctAnswersMap) {
         this.correctAnswersMap = correctAnswersMap;
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
     }
 }

@@ -13,6 +13,7 @@ import ch.uzh.ifi.hase.soprafs24.constant.PlayerStatus;
 @Repository
 public interface PlayerRepository extends JpaRepository<Player, Long> {
 
+    Player findByPlayerId(Long playerId);
     List<Player> findByGame_GameId(Long gameId);  // corrected
     List<Player> findByTeam_TeamId(Long teamId);
     List<Player> findByPlayerStatus(PlayerStatus playerStatus);
