@@ -56,7 +56,18 @@ public class Player implements Serializable {
     
     @Column(nullable = true, unique = true)
     private String playerName;
+
+    @Column(nullable = true)
+    private String correctAnswers;
     
+    public String getCorrectAnswers() {
+        return correctAnswers;
+    }
+
+    public void setCorrectAnswers(String correctAnswers) {
+        this.correctAnswers = correctAnswers;
+    }
+
     public String getPlayerName() {
         return playerName;
     }

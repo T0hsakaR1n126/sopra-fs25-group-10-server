@@ -15,9 +15,9 @@ public class GameGetDTO {
 
     private Long ownerId;
 
-    private Long userId;
+    // private Long userId;
 
-    private String username;
+    // private String username;
 
     private Integer totalScore;
 
@@ -45,7 +45,7 @@ public class GameGetDTO {
 
     private LocalDateTime endTime;
 
-    private Integer finalScore;
+    // private Integer finalScore;
 
     private Integer maxHints;
 
@@ -53,11 +53,11 @@ public class GameGetDTO {
 
     private String resultSummary;
 
-    private Integer totalQuestions;
+    // private Integer totalQuestions;
 
-    private Integer correctAnswers;
+    // private Integer correctAnswers;
 
-    private List<Map<String, Object>> hints;
+    // private List<Map<String, Object>> hints;
 
     private LocalDateTime starTime;
 
@@ -181,13 +181,13 @@ public class GameGetDTO {
         this.endTime = endTime;
     }
     
-    public Integer getFinalScore() {
-        return finalScore;
-    }
+    // public Integer getFinalScore() {
+    //     return finalScore;
+    // }
     
-    public void setFinalScore(Integer finalScore) {
-        this.finalScore = finalScore;
-    }
+    // public void setFinalScore(Integer finalScore) {
+    //     this.finalScore = finalScore;
+    // }
     
     public String getResultSummary() {
         return resultSummary;
@@ -197,37 +197,37 @@ public class GameGetDTO {
         this.resultSummary = resultSummary;
     }
     
-    public Integer getTotalQuestions() {
-        return totalQuestions;
-    }
+    // public Integer getTotalQuestions() {
+    //     return totalQuestions;
+    // }
     
-    public void setTotalQuestions(Integer totalQuestions) {
-        this.totalQuestions = totalQuestions;
-    }
+    // public void setTotalQuestions(Integer totalQuestions) {
+    //     this.totalQuestions = totalQuestions;
+    // }
     
-    public Integer getCorrectAnswers() {
-        return correctAnswers;
-    }
+    // public Integer getCorrectAnswers() {
+    //     return correctAnswers;
+    // }
     
-    public void setCorrectAnswers(Integer correctAnswers) {
-        this.correctAnswers = correctAnswers;
-    }
+    // public void setCorrectAnswers(Integer correctAnswers) {
+    //     this.correctAnswers = correctAnswers;
+    // }
 
-    public Long getUserId() {
-        return userId;
-    }
+    // public Long getUserId() {
+    //     return userId;
+    // }
     
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
+    // public void setUserId(Long userId) {
+    //     this.userId = userId;
+    // }
     
-    public String getUsername() {
-        return username;
-    }
+    // public String getUsername() {
+    //     return username;
+    // }
     
-    public void setUsername(String username) {
-        this.username = username;
-    }
+    // public void setUsername(String username) {
+    //     this.username = username;
+    // }
     
     public Integer getTotalScore() {
         return totalScore;
@@ -237,13 +237,13 @@ public class GameGetDTO {
         this.totalScore = totalScore;
     }
       
-    public void setHints(List<Map<String, Object>> hints){
-        this.hints = hints;
-    }
+    // public void setHints(List<Map<String, Object>> hints){
+    //     this.hints = hints;
+    // }
   
-    public List<Map<String, Object>> getHints(){
-        return hints;
-    }
+    // public List<Map<String, Object>> getHints(){
+    //     return hints;
+    // }
 
     public Integer getMaxHints() {
         return maxHints;
