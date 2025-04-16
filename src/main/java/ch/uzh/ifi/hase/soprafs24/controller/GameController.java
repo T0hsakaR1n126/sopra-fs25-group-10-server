@@ -5,9 +5,11 @@ import ch.uzh.ifi.hase.soprafs24.constant.GameMode;
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
 import ch.uzh.ifi.hase.soprafs24.entity.Player;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.GameCreateResponseDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.LobbyJoinGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.LobbyJoinPostDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerAuthDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GamePostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameStartDTO;
@@ -50,12 +52,9 @@ public class GameController {
     @PostMapping("/games")
     @ResponseStatus(HttpStatus.CREATED)
     @ResponseBody
-    public GameGetDTO createGame(@RequestBody GamePostDTO gamePostDTO) {
+    public GameCreateResponseDTO createGame(@RequestBody GamePostDTO gamePostDTO) {
         Game gameToCreate = DTOMapper.INSTANCE.convertGamePostDTOtoGameEntity(gamePostDTO);
-        
-        Game createdGame = gameService.createGame(gameToCreate);
-        
-        return DTOMapper.INSTANCE.convertGameEntityToGameGetDTO(createdGame);
+        return gameService.createGame(gameToCreate);
     }
     
     @GetMapping("/lobby")
@@ -87,12 +86,12 @@ public class GameController {
     @PostMapping("/lobby/{gameId}/join")
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public PlayerDTO joinGame(@PathVariable Long gameId,
+    public PlayerAuthDTO joinGame(@PathVariable Long gameId,
     @RequestBody(required = false) LobbyJoinPostDTO joinDTO) {
         Long userId = joinDTO != null ? joinDTO.getUserId() : null;
         String password = joinDTO != null ? joinDTO.getPassword() : null;
         
-        return DTOMapper.INSTANCE.convertPlayerToPlayerDTO(gameService.userJoinGame(gameId, userId, password));
+        return DTOMapper.INSTANCE.convertPlayerToPlayerAuthDTO(gameService.userJoinGame(gameId, userId, password));
     }
     
     @PutMapping("/lobbyOut/{playerId}")

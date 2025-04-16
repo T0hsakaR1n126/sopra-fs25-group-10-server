@@ -17,6 +17,7 @@ import ch.uzh.ifi.hase.soprafs24.repository.PlayerRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.TeamRepository;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.GameCreateResponseDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GamePostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameStartDTO;
@@ -46,8 +47,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -74,6 +78,9 @@ public class GameService {
     
     private Map<Country, List<Map<String, Object>>> generatedHintsA;
     private Map<Country, List<Map<String, Object>>> generatedHintsB;
+
+    //timer
+    private final Map<Long, Timer> runningTimers = new HashMap<>();
     
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
@@ -117,7 +124,7 @@ public class GameService {
     // }
     
     // Game Creation Service
-    public Game createGame(Game gameToCreate) {
+    public GameCreateResponseDTO createGame(Game gameToCreate) {
         if (gameToCreate.getModeType() == null) {
             throw new IllegalArgumentException("Game mode must be specified.");
         }
@@ -139,7 +146,7 @@ public class GameService {
     }
     
     //SOLO game creation
-    private Game createSoloGame(Game gameToCreate) {
+    private GameCreateResponseDTO createSoloGame(Game gameToCreate) {
         // Create Game Object for SOLO game
         Game gameCreated = new Game();
         gameCreated.setModeType(gameToCreate.getModeType());
@@ -182,10 +189,10 @@ public class GameService {
         playerRepository.flush();
         
         log.debug("Created new SOLO Game: {}", gameCreated);
-        return gameCreated;
+        return dtoMapper.convertGameToGameCreateResponseDTO(gameCreated, ownerPlayer);
     }
     
-    private Game createMultiplayerGame(Game gameToCreate) {
+    private GameCreateResponseDTO createMultiplayerGame(Game gameToCreate) {
         Integer maxPlayers = gameToCreate.getMaxPlayersNumber();
         
         if (gameToCreate.getModeType() == GameMode.ONE_VS_ONE) {
@@ -241,8 +248,8 @@ public class GameService {
         
         User ownerUser = userRepository.findByUserId(ownerId);
         Player ownerPlayer = new Player(ownerUser, gameCreated);
-        ownerPlayer.setToken(UUID.randomUUID().toString());
         ownerPlayer.setPlayerStatus(PlayerStatus.WAITING);
+        ownerPlayer.setToken(UUID.randomUUID().toString());
         ownerPlayer.setRole(GameRoleType.OWNER);
         
         if (gameToCreate.getModeType() == GameMode.TEAM_VS_TEAM && !createdTeams.isEmpty()) {
@@ -264,7 +271,7 @@ public class GameService {
         playerRepository.flush();
         
         log.debug("Created new Multiplayer Game: {}", gameCreated);
-        return gameCreated;
+        return dtoMapper.convertGameToGameCreateResponseDTO(gameCreated, ownerPlayer);
     }
     
     public Game getGameByGameId(Long gameId){
@@ -316,6 +323,7 @@ public class GameService {
             
             newPlayer = new Player(user, targetGame);
             newPlayer.setPlayerStatus(PlayerStatus.WAITING);
+            newPlayer.setToken(UUID.randomUUID().toString());
             
             newPlayer = playerRepository.save(newPlayer);
             playerRepository.flush();
@@ -326,6 +334,7 @@ public class GameService {
         } else {
             newPlayer = new Player(null, targetGame);
             newPlayer.setPlayerStatus(PlayerStatus.WAITING);
+            newPlayer.setToken(UUID.randomUUID().toString());
             playerRepository.save(newPlayer);
         }
         
@@ -447,22 +456,26 @@ public class GameService {
         if (gameToStart == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found.");
         }
+
+        if (gameToStart.getMaxPlayersNumber() != gameToStart.getCurrentPlayersNumber()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Game is not full yet.");
+        }
         
         if (gameToStart.getGameStatus() != GameStatus.WAITING) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Game is not in a state to be started.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Game is not in a state to be started.");
         }
         
         Player player = playerRepository.findById(playerDTO.getPlayerId())
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
         
         if (!player.getGame().getGameId().equals(gameId)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Player does not belong to this game.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Player does not belong to this game.");
         }
-
+        
         if (!player.getRole().equals(GameRoleType.OWNER)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Player is not the owner of the game.");
         }
-
+        
         if (!playerDTO.getToken().equals(player.getToken())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid token.");
         }
@@ -490,7 +503,8 @@ public class GameService {
         // gameHintDTO.setTime(gameToStart.getTime());
         
         // // Save the game with the updated information (start time, end time, game status, etc.)
-        // gameRepository.save(gameToStart);
+        gameRepository.save(gameToStart);
+        startGameTimer(gameToStart);
         
         // // Send a WebSocket message to notify players that the game has started
         // messagingTemplate.convertAndSend("/topic/start/" + gameId + "/hints", gameHintDTO);
@@ -500,25 +514,45 @@ public class GameService {
         // messagingTemplate.convertAndSend("/topic/game/" + gameId, "Game ID " + gameId + " has started!");
     }
     
+    private void startGameTimer(Game game) {
+        Timer timer = new Timer(true);
+        Long gameId = game.getGameId();
+        
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                LocalDateTime now = LocalDateTime.now();
+                long secondsLeft = Duration.between(now, game.getEndTime()).getSeconds();
+                
+                if (secondsLeft <= 0) {
+                    game.setGameStatus(GameStatus.FINISHED);
+                    gameRepository.save(game);
+                    messagingTemplate.convertAndSend("/topic/game/" + gameId + "/end", "Game Over!");
+                    timer.cancel();
+                } else {
+                    messagingTemplate.convertAndSend("/topic/game/" + gameId + "/timer", secondsLeft);
+                }
+            }
+        };
+        
+        timer.scheduleAtFixedRate(task, 0, 1000);
+        runningTimers.put(gameId, timer);
+    }
     
-    // public List<User> getGamePlayers(Long gameId){
-    //     Game gameJoined = gameRepository.findBygameId(gameId);
-    //     List<Long> allPlayers = gameJoined.getPlayers();
+    public List<Player> getPlayersByGameId(Long gameId) {
+        Game game = gameRepository.findBygameId(gameId);
     
-    //     List<User> players = new ArrayList<>();
-    //     for (Long userId : allPlayers) {
-    //         players.add(userRepository.findByUserId(userId));
-    //     }
-    //     return players;
-    //     //
-    //     //      List<UserGetDTO> allPlayersDTOs = new ArrayList<>();
-    //     //
-    //     //      for (Long userId : allPlayers) {
-    //     //        allPlayersDTOs.add(DTOMapper.INSTANCE.convertEntityToUserGetDTO(userRepository.findByUserId(userId)));
-    //     //      }
-    //     //      return allPlayersDTOs;
+        if (game == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with ID " + gameId + " not found.");
+        }
     
-    // }
+        List<Player> players = playerRepository.findByGame_GameId(gameId);
+        if (players == null || players.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No players found for game with ID" + gameId);
+        }
+        // Convert Player entities to PlayerDTOs
+        return players;
+    }
     
     // public GameGetDTO processingAnswer(GamePostDTO gamePostDTO, Long userId){
     

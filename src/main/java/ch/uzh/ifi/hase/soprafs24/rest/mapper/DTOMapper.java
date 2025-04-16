@@ -5,8 +5,10 @@ import ch.uzh.ifi.hase.soprafs24.entity.Player;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.GameCreateResponseDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.LobbyJoinGetDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerAuthDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GamePostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameStartDTO;
@@ -89,7 +91,7 @@ public interface DTOMapper {
     @Mapping(source = "email", target = "email")
     @Mapping(source = "bio", target = "bio")
     User convertUserProfileDTOtoEntity(UserProfileDTO userProfileDTO);
-
+    
     @Mapping(source = "playerId", target = "playerId")
     @Mapping(source = "playerName", target = "playerName")
     @Mapping(source = "team.teamId", target = "teamId")
@@ -102,4 +104,17 @@ public interface DTOMapper {
     // @Mapping(source = "game.gameId", target = "gameId")
     @Mapping(source = "token", target = "token")
     GameStartDTO convertPlayerToGameStartDTO(Player player);
+    
+    @Mapping(source = "playerId", target = "playerId")
+    @Mapping(source = "playerName", target = "playerName")
+    @Mapping(source = "team.teamId", target = "teamId")
+    @Mapping(source = "team.teamName", target = "teamName")
+    @Mapping(source = "user.userId", target = "userId")
+    @Mapping(source = "game.gameId", target = "gameId")
+    @Mapping(source = "token", target = "token")
+    PlayerAuthDTO convertPlayerToPlayerAuthDTO(Player player);
+    
+    @Mapping(source = "game", target = "game")
+    @Mapping(source = "player", target = "player")
+    GameCreateResponseDTO convertGameToGameCreateResponseDTO(Game game, Player player);
 }
