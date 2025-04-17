@@ -6,6 +6,7 @@ import ch.uzh.ifi.hase.soprafs24.constant.GameHints;
 import ch.uzh.ifi.hase.soprafs24.constant.GameMode;
 import ch.uzh.ifi.hase.soprafs24.constant.GameRoleType;
 import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
+import ch.uzh.ifi.hase.soprafs24.constant.GuessResult;
 import ch.uzh.ifi.hase.soprafs24.constant.PlayerStatus;
 import ch.uzh.ifi.hase.soprafs24.constant.TeamStatus;
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
@@ -24,6 +25,7 @@ import ch.uzh.ifi.hase.soprafs24.rest.dto.GamePostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameStartDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.HintGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerResultDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserHistoryDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameGetDTO;
@@ -45,6 +47,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -495,33 +498,52 @@ public class GameService {
         generatedHints = waitForHintGeneration();
         gameToStart = saveHintsAndAnswersToGame(gameToStart, generatedHints);     
         
-        setQuestionStartingScore(gameId);
-
+        setGameStartingScore(gameId);
+        
         gameRepository.save(gameToStart);
         startGameTimer(gameToStart);
         gameRepository.flush();
     }
-
-    private void setQuestionStartingScore(Long gameId) {
+    
+    private void setGameStartingScore(Long gameId) {
         List<Player> players = playerRepository.findByGame_GameId(gameId);
         
         for (Player player : players) {
-            player.setCurrentHint(0); //set current hint to 0
-            player.setQuestionId(1L); //set current question to 1
-            player.setHintsLeft(GameHints.MAX_HINTS); //set hints left to max hints
-            player.setTotalQuestions(1L);
-            if (player.getScore() == null) {
-                player.setScore(100);
-                // if player starting then set correct questions to 0
+            player.setPlayerStatus(PlayerStatus.PLAYING);
+            player.setCurrentHint(0);       
+            player.setHintsLeft(GameHints.MAX_HINTS);
+            player.setTriesLeft(10);
+            
+            player.setQuestionId(Objects.requireNonNullElse(player.getQuestionId(), 0L) + 1);
+            player.setTotalQuestions(Objects.requireNonNullElse(player.getTotalQuestions(), 0L) + 1);
+            player.setScore(Objects.requireNonNullElse(player.getScore(), 0) + 100); // If no score, initialize it to 100, else increment score by 100
+            
+            if (player.getCorrectQuestions() == null) {
                 player.setCorrectQuestions(0L);
-            } else {
-                player.setScore(player.getScore() + 100);
             }
             playerRepository.save(player);
         }
+        
         System.out.println("Scores updated for all players in game ");
     }
-
+    
+    private void setQuestionStartingScore(Long playerId) {
+        Player player = playerRepository.findById(playerId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
+        player.setPlayerStatus(PlayerStatus.PLAYING);
+        player.setCurrentHint(0); 
+        player.setHintsLeft(GameHints.MAX_HINTS); 
+        player.setTriesLeft(10); 
+        
+        player.setQuestionId(Objects.requireNonNullElse(player.getQuestionId(), 0L) + 1);
+        player.setTotalQuestions(Objects.requireNonNullElse(player.getTotalQuestions(), 0L) + 1);
+        
+        player.setScore(Objects.requireNonNullElse(player.getScore(), 0) + 100); 
+        playerRepository.save(player);
+        
+        System.out.println("Player " + playerId + " score and progress updated.");
+    }
+    
     private Map<Country, List<Map<String, Object>>> waitForHintGeneration() {
         Map<Country, List<Map<String, Object>>> generatedHints = null;
         boolean hintsGenerated = false;
@@ -631,22 +653,21 @@ public class GameService {
         return players;
     }
     
-
     public HintGetDTO getHint(Long gameId, Long playerId, String token, Integer hintId, Long questionId) {
         Game game = gameRepository.findBygameId(gameId);
         if (game == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found.");
         }
-    
+        
         Player player = playerRepository.findByPlayerId(playerId);
         if (player == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found.");
         }
-    
+        
         if (!player.getToken().equals(token)) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid player token.");
         }
-    
+        
         // validate questionId
         Long currentQuestion = player.getQuestionId();
         if (!questionId.equals(currentQuestion)) {
@@ -656,12 +677,12 @@ public class GameService {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot ask for a future question.");
             }
         }
-    
+        
         Integer currentHint = player.getCurrentHint();
         if (hintId > currentHint + 1 || hintId < 0 || hintId > game.getMaxHints()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid hint request order.");
         }
-    
+        
         // Deduct hint
         if(hintId == currentHint + 1){
             player.useHint();
@@ -669,75 +690,73 @@ public class GameService {
             player.setCurrentHint(hintId);
             playerRepository.save(player);
         }
-
+        
         HintEntry selectedHint = game.getHintEntries().stream()
         .filter(h -> h.getQuestionId().equals(questionId))
         .filter(h -> h.getDifficulty().equals(hintId))
         .findFirst()
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Hint not found"));
-    
+        
         HintGetDTO dto = new HintGetDTO();
         dto.setHintText(selectedHint.getText());
         return dto;
     }
     
+    public PlayerResultDTO processingAnswer(Long gameId, Long questionId, Long playerId, String token, Country submittedAnswer) {
+        
+        if (submittedAnswer == null || !EnumSet.allOf(Country.class).contains(submittedAnswer)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Submitted answer is not a valid country.");
+        }
+        
+        Game game = gameRepository.findBygameId(gameId);
+        if (game == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found.");
+        }
+        
+        Player player = playerRepository.findByPlayerId(playerId);
+        if (player == null || !player.getToken().equals(token)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid player or token.");
+        }
+        
+        String correctAnswerStr = game.getAnswersMap().get(questionId);
+        Country correctAnswer = Country.valueOf(correctAnswerStr);
+        boolean isCorrect = correctAnswer.equals(submittedAnswer);
+        
+        PlayerResultDTO result = new PlayerResultDTO();
+        result.setGuessResult(isCorrect ? GuessResult.CORRECT : GuessResult.INCORRECT);
+        player.setTriesLeft(player.getTriesLeft() - 1);
+        
+        if (isCorrect) {
+            player.setScore(player.getScore() + 50); //awart 50 ponts extra for a correct guess
+            player.setCorrectQuestions(player.getCorrectQuestions() + 1);
+        }
+        
+        playerRepository.save(player);
+        
+        if (isCorrect || player.getHintsLeft() <= 0 || player.getTriesLeft() <= 0) {
+            result.setCorrectAnswer(correctAnswer);
+            setQuestionStartingScore(playerId);
+        }
+        return result;
+    }
+    
+    public void skipQuestion(Long gameId, Long playerId, String token) {
+        Game game = gameRepository.findBygameId(gameId);
+        if (game == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found.");
+        }
+        
+        Player player = playerRepository.findByPlayerId(playerId);
+        if (player == null || !player.getToken().equals(token)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid player or token.");
+        }
+        
+        player.setScore(player.getScore()- (100 - player.getCurrentHint()*20));
+        player.setSkippedQuestions(Objects.requireNonNullElse(player.getSkippedQuestions(), 0L) + 1);
+        playerRepository.save(player);
+        setQuestionStartingScore(playerId);
+    }
 
-    // public GameGetDTO processingAnswer(GamePostDTO gamePostDTO, Long userId){
-    
-    //     //judge right or wrong and update hints
-    //     Game targetGame = gameRepository.findBygameId(gamePostDTO.getGameId());
-    //     targetGame.updateTotalQuestions(userId,targetGame.getTotalQuestions(userId)+1);
-    
-    //     if(gamePostDTO.getSubmitAnswer() == generatedHints.keySet().iterator().next()){
-    //         targetGame.updateCorrectAnswers(userId,targetGame.getCorrectAnswers(userId)+1);
-    
-    //         targetGame.updateScore(userId, targetGame.getScore(userId)+(100-(gamePostDTO.getHintUsingNumber()-1)*20));
-    //         gameRepository.save(targetGame);
-    //         gameRepository.flush();
-    //         // 
-    
-    //         GameGetDTO gameHintDTO = new GameGetDTO();
-    //         generatedHints = getHintsOfOneCountry();
-    //         gameHintDTO.setHints(generatedHints.values().iterator().next());
-    //         gameHintDTO.setJudgement(true);
-    
-    //         Map<String, Integer> scoreBoardFront = new HashMap<>();
-    //         for(Long userid: targetGame.getPlayers()){
-    //             String username = (userRepository.findByUserId(userid)).getUsername();
-    //             int score = targetGame.getScore(userid);
-    //             scoreBoardFront.put(username,score);
-    //         }
-    //         messagingTemplate.convertAndSend("/topic/user/scoreBoard", scoreBoardFront);
-    //         log.info("websocket send!");
-    
-    //         gameHintDTO.setHints(generatedHints.values().iterator().next());
-    //         return gameHintDTO;
-    //     }else{
-    
-    //         gameRepository.save(targetGame);
-    //         gameRepository.flush();
-    
-    //         // 
-    
-    //         GameGetDTO gameHintDTO = new GameGetDTO();
-    //         generatedHints = getHintsOfOneCountry();
-    //         gameHintDTO.setHints(generatedHints.values().iterator().next());
-    //         gameHintDTO.setJudgement(false);
-    //         Map<String, Integer> scoreBoardFront = new HashMap<>();
-    //         for(Long userid: targetGame.getPlayers()){
-    //             String username = (userRepository.findByUserId(userid)).getUsername();
-    //             int score = (targetGame.getScoreBoard()).get(userid);
-    //             scoreBoardFront.put(username,score);
-    //         }
-    //         messagingTemplate.convertAndSend("/topic/user/scoreBoard", scoreBoardFront);
-    //         log.info("websocket send!");
-    
-    //         gameHintDTO.setHints(generatedHints.values().iterator().next());
-    //         return gameHintDTO;
-    //     }
-    // }
-    
-    
     // public void submitScores(Long gameId,Map<Long, Integer> scoreMap, Map<Long, Integer> correctAnswersMap, Map<Long, Integer> totalQuestionsMap) {
     //     Game game = gameRepository.findBygameId(gameId);
     

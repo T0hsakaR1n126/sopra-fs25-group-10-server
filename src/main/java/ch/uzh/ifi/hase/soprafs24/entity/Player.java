@@ -19,14 +19,6 @@ public class Player implements Serializable {
 
     @Column(nullable = false, unique = true)
     private String token;
-    
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
-    }
 
     @ManyToOne
     @JoinColumn(name = "userId", nullable = true)  // nullable for guests
@@ -57,12 +49,30 @@ public class Player implements Serializable {
     @Column(nullable = true, unique = true)
     private String playerName;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Long totalQuestions;
 
     @Column(nullable = true)
     private Long correctQuestions;
-    
+
+    @Column(nullable = true)
+    private Integer triesLeft;
+
+    public Integer getTriesLeft() {
+        return triesLeft;
+    }
+
+    public void setTriesLeft(Integer triesLeft) {
+        this.triesLeft = triesLeft;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
     public Long getCorrectQuestions() {
         return correctQuestions;
     }
@@ -235,6 +245,14 @@ public class Player implements Serializable {
             this.hintsLeft -= 1 ;
         } else {
             throw new IllegalStateException("No more hints available");
+        }
+    }
+
+    public void useTry() {
+        if (triesLeft > 0) {
+            this.triesLeft -= 1 ;
+        } else {
+            throw new IllegalStateException("No more Tries available");
         }
     }
     

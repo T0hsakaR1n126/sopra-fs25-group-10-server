@@ -12,6 +12,8 @@ import ch.uzh.ifi.hase.soprafs24.rest.dto.LobbyJoinPostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerAnswerDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerAuthDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerResultDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerSimpleDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GamePostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameStartDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.HintGetDTO;
@@ -173,12 +175,28 @@ public class GameController {
     
     
     
-    // @PutMapping("/submit/{questionId}")
-    // @ResponseStatus(HttpStatus.OK)
-    // @ResponseBody
-    // public PlayerAnswerDTO answerProcessing(@PathVariable Long questionId, @RequestBody PlayerAnswerDTO playerAnswerDTO) {
-    //     return gameService.processingAnswer(playerAnswerDTO);
-    // }
+    @PostMapping("/game/{gameId}/{questionId}/answer")
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public PlayerResultDTO answerProcessing(@PathVariable Long questionId,
+    @PathVariable Long gameId,
+    @RequestBody PlayerAnswerDTO playerAnswerDTO){
+        return gameService.processingAnswer(gameId,
+                                            questionId,
+                                            playerAnswerDTO.getPlayerId(),
+                                            playerAnswerDTO.getToken(),
+                                            playerAnswerDTO.getAnswer());
+    }
+    
+
+    @PostMapping("/game/{gameId}/{questionId}/skip")
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public void skipQuestion(@PathVariable Long questionId,
+    @PathVariable Long gameId,
+    @RequestBody PlayerSimpleDTO playerDTO){
+        gameService.skipQuestion(gameId, playerDTO.getPlayerId(), playerDTO.getToken());
+    }
     
     // @PutMapping("/giveup/{userId}")
     // @ResponseStatus(HttpStatus.OK)

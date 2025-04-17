@@ -68,7 +68,7 @@ public class Game implements Serializable {
     @ElementCollection
     @CollectionTable(name = "game_answers", joinColumns = @JoinColumn(name = "gameId"))
     @MapKeyColumn(name = "questionId")
-    @Column(name = "answerText")
+    @Column(name = "countryName")
     private Map<Long, String> answersMap = new HashMap<>(); // questionId -> answerText
 
     // @ElementCollection
