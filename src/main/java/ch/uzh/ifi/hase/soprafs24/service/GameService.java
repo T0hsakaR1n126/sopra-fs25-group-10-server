@@ -503,6 +503,9 @@ public class GameService {
         gameRepository.save(gameToStart);
         startGameTimer(gameToStart);
         gameRepository.flush();
+
+        messagingTemplate.convertAndSend("/topic/start/" + gameId + "/scoreboard", getScoreBoard(gameId));
+
     }
     
     private void setGameStartingScore(Long gameId) {
@@ -525,23 +528,25 @@ public class GameService {
         }
         
         System.out.println("Scores updated for all players in game ");
+        messagingTemplate.convertAndSend("/topic/start/" + gameId + "/scoreboard", getScoreBoard(gameId));
+
     }
     
     private void setQuestionStartingScore(Long playerId) {
         Player player = playerRepository.findById(playerId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
-        player.setPlayerStatus(PlayerStatus.PLAYING);
         player.setCurrentHint(0); 
         player.setHintsLeft(GameHints.MAX_HINTS); 
         player.setTriesLeft(10); 
-        
         player.setQuestionId(Objects.requireNonNullElse(player.getQuestionId(), 0L) + 1);
         player.setTotalQuestions(Objects.requireNonNullElse(player.getTotalQuestions(), 0L) + 1);
         
         player.setScore(Objects.requireNonNullElse(player.getScore(), 0) + 100); 
         playerRepository.save(player);
         
+        Long gameId = player.getGame().getGameId();
         System.out.println("Player " + playerId + " score and progress updated.");
+        messagingTemplate.convertAndSend("/topic/start/" + gameId + "/scoreboard", getScoreBoard(gameId));
     }
     
     private Map<Country, List<Map<String, Object>>> waitForHintGeneration() {
@@ -594,6 +599,8 @@ public class GameService {
         
         timer.scheduleAtFixedRate(task, 0, 1000);
         runningTimers.put(gameId, timer);
+        messagingTemplate.convertAndSend("/topic/start/" + gameId + "/scoreboard", getScoreBoard(gameId));
+
     }
     
     public Map<Country, List<Map<String, Object>>> getHintsOfOneCountry() {
@@ -737,6 +744,9 @@ public class GameService {
             result.setCorrectAnswer(correctAnswer);
             setQuestionStartingScore(playerId);
         }
+
+        messagingTemplate.convertAndSend("/topic/start/" + gameId + "/scoreboard", getScoreBoard(gameId));
+
         return result;
     }
     
@@ -755,6 +765,9 @@ public class GameService {
         player.setSkippedQuestions(Objects.requireNonNullElse(player.getSkippedQuestions(), 0L) + 1);
         playerRepository.save(player);
         setQuestionStartingScore(playerId);
+
+        messagingTemplate.convertAndSend("/topic/start/" + gameId + "/scoreboard", getScoreBoard(gameId));
+
     }
 
     public void playerForfiet(Long gameId, Long playerId, String token) {
@@ -770,6 +783,9 @@ public class GameService {
         
         player.setPlayerStatus(PlayerStatus.FINISHED);
         playerRepository.save(player);
+
+        messagingTemplate.convertAndSend("/topic/start/" + gameId + "/scoreboard", getScoreBoard(gameId));
+
     }
 
     // public void submitScores(Long gameId,Map<Long, Integer> scoreMap, Map<Long, Integer> correctAnswersMap, Map<Long, Integer> totalQuestionsMap) {
