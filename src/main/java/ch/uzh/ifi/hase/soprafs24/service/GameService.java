@@ -757,6 +757,21 @@ public class GameService {
         setQuestionStartingScore(playerId);
     }
 
+    public void playerForfiet(Long gameId, Long playerId, String token) {
+        Game game = gameRepository.findBygameId(gameId);
+        if (game == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found.");
+        }
+        
+        Player player = playerRepository.findByPlayerId(playerId);
+        if (player == null || !player.getToken().equals(token)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid player or token.");
+        }
+        
+        player.setPlayerStatus(PlayerStatus.FINISHED);
+        playerRepository.save(player);
+    }
+
     // public void submitScores(Long gameId,Map<Long, Integer> scoreMap, Map<Long, Integer> correctAnswersMap, Map<Long, Integer> totalQuestionsMap) {
     //     Game game = gameRepository.findBygameId(gameId);
     

@@ -136,6 +136,17 @@ public class GameController {
     //     gamePostDTO.getTotalQuestionsMap()
     //     );
     // }
+
+    @PutMapping("/game/{gameId}/end")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void playerForfiet(@PathVariable Long gameId, @RequestBody PlayerSimpleDTO playerDTO) {
+        gameService.playerForfiet(
+        gameId,
+        playerDTO.getPlayerId(),
+        playerDTO.getToken()
+        );
+    }
+    
     
     // @GetMapping("/users/{userId}/history")
     // @ResponseStatus(HttpStatus.OK)
