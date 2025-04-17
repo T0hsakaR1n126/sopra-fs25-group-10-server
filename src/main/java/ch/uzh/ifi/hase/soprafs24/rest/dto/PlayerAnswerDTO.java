@@ -1,8 +1,11 @@
 package ch.uzh.ifi.hase.soprafs24.rest.dto;
 
+import ch.uzh.ifi.hase.soprafs24.constant.Country;
+
 public class PlayerAnswerDTO {
     private String playerId;
-    private String answer;
+    private String token;
+    private Country answer;
     private String questionId;
     private String gameId;
 
@@ -30,11 +33,19 @@ public class PlayerAnswerDTO {
         this.playerId = playerId;
     }
 
-    public String getAnswer() {
+    public Country getAnswer() {
         return answer;
     }
 
-    public void setAnswer(String answer) {
+    public void setAnswer(Country answer) {
         this.answer = answer;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 }

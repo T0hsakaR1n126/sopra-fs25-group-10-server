@@ -60,6 +60,20 @@ public class Player implements Serializable {
     @Column(nullable = true)
     private String correctAnswers;
     
+    @Column(nullable = true)
+    private Long questionId;
+
+    public Long getQuestionId() {
+        return questionId;
+    }
+
+    public void setQuestionId(Long questionId) {
+        this.questionId = questionId;
+    }
+
+    @Column(nullable = true)
+    private int currentHint; //int to make default 0
+    
     public String getCorrectAnswers() {
         return correctAnswers;
     }

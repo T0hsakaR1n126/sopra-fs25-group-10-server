@@ -7,8 +7,26 @@ public class PlayerDTO {
     private String playerName;
     private Long teamId;
     private String teamName;
-    private String gameId;
+    private Long gameId;
+    private Long gameStatus;
     private Long userId;
+    private int score;
+
+    public Long getGameStatus() {
+        return gameStatus;
+    }
+
+    public void setGameStatus(Long gameStatus) {
+        this.gameStatus = gameStatus;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
+    }
 
     public Long getUserId() {
         return userId;
@@ -18,11 +36,11 @@ public class PlayerDTO {
         this.userId = userId;
     }
 
-    public String getGameId() {
+    public Long getGameId() {
         return gameId;
     }
 
-    public void setGameId(String gameId) {
+    public void setGameId(Long gameId) {
         this.gameId = gameId;
     }
 

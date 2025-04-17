@@ -7,6 +7,7 @@ import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameCreateResponseDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameGetDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.GameHintDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.LobbyJoinGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerAuthDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerDTO;
@@ -98,6 +99,9 @@ public interface DTOMapper {
     @Mapping(source = "team.teamName", target = "teamName")
     @Mapping(source = "user.userId", target = "userId")
     @Mapping(source = "game.gameId", target = "gameId")
+    @Mapping(source = "score", target = "score")
+    @Mapping(source = "game.gameStatus", target = "gameStatus")
+    // @Mapping(source = "playerStatus", target = "playerStatus")
     PlayerDTO convertPlayerToPlayerDTO(Player user);
     
     @Mapping(source = "playerId", target = "playerId")
@@ -112,9 +116,14 @@ public interface DTOMapper {
     @Mapping(source = "user.userId", target = "userId")
     @Mapping(source = "game.gameId", target = "gameId")
     @Mapping(source = "token", target = "token")
+    // @Mapping(source = "playerStatus", target = "playerStatus")
     PlayerAuthDTO convertPlayerToPlayerAuthDTO(Player player);
     
     @Mapping(source = "game", target = "game")
     @Mapping(source = "player", target = "player")
     GameCreateResponseDTO convertGameToGameCreateResponseDTO(Game game, Player player);
+    
+    @Mapping(source = "game.gameId", target = "Id")
+    @Mapping(source = "hints", target = "hints")
+    GameHintDTO convertGameHintDTOToGameHintDTO(Game game);
 }

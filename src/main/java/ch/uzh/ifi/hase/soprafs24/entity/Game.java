@@ -5,12 +5,17 @@ import javax.persistence.*;
 import ch.uzh.ifi.hase.soprafs24.constant.GameAccessType;
 import ch.uzh.ifi.hase.soprafs24.constant.GameMode;
 import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerDTO;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 
 /**
@@ -38,21 +43,42 @@ public class Game implements Serializable {
     
     @Column(nullable = true)
     private Long ownerId;
-
+    
     @Column(nullable = true)
     private Long userId;
-
+    
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Player> players = new ArrayList<>();
-
+    
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Team> teams = new ArrayList<>();
-
-    @ElementCollection
-    @CollectionTable(name = "scoreboard", joinColumns = @JoinColumn(name = "gameId"))
-    @MapKeyColumn(name = "userId")
-    @Column(name = "userscore")
-    private Map<Long, Integer> scoreBoard = new HashMap<>();
+    
+    // @ElementCollection
+    // @CollectionTable(name = "scoreboard", joinColumns = @JoinColumn(name = "gameId"))
+    // @MapKeyColumn(name = "playerId")
+    // @Column(name = "playerScore")
+    // private Map<Long, Integer> scoreBoard = new HashMap<>();
+    
+    public List<PlayerDTO> getSortedScoreboard() {
+        if (players == null || players.isEmpty()) return Collections.emptyList();
+    
+        return players.stream()
+            .sorted(Comparator.comparingInt(Player::getScore).reversed())
+            .map(player -> {
+                PlayerDTO dto = new PlayerDTO();
+                dto.setPlayerId(player.getPlayerId());
+                dto.setPlayerName(player.getPlayerName());
+                dto.setTeamId(player.getTeam() != null ? player.getTeam().getTeamId() : null);
+                dto.setTeamName(player.getTeam() != null ? player.getTeam().getTeamName() : null);
+                dto.setGameId(this.getGameId()); 
+                dto.setGameStatus(gameId);
+                dto.setUserId(player.getUser().getUserId());
+                dto.setScore(player.getScore());
+    
+                return dto;
+            })
+            .collect(Collectors.toList());
+    }
     
     @Column(nullable = true)
     private Integer maxHints;
@@ -62,10 +88,10 @@ public class Game implements Serializable {
     
     @Column(nullable = false)
     private GameStatus gameStatus;
-
+    
     @Column(nullable = true)
     private GameAccessType accessType;
-
+    
     @Column(nullable = false)
     private Integer currentPlayersNumber;
     
@@ -80,10 +106,10 @@ public class Game implements Serializable {
     
     @Column(nullable = true)
     private String password;
-
+    
     @Column(nullable = true)
     private LocalDateTime startTime;
-
+    
     @Column(nullable = true)
     private LocalDateTime endTime;
     
@@ -115,20 +141,20 @@ public class Game implements Serializable {
     public void setGameId(Long gameId) {
         this.gameId = gameId;
     }
-
+    
     //addding user id for join purposes
     public Long getUserId() {
         return userId;
     }
-
+    
     public void setUserId(Long userId) {
         this.userId = userId;
     }
-
+    
     public GameAccessType getAccessType() {
         return accessType;
     }
-
+    
     public void setAccessType(GameAccessType accessType) {
         this.accessType = accessType;
     }
@@ -164,11 +190,11 @@ public class Game implements Serializable {
     public void setPlayers(List<Player> players) {
         this.players = players;
     }
-
+    
     public List<Team> getTeams() {
         return teams;
     }
-
+    
     public void setTeams(List<Team> teams) {
         this.teams = teams;
     }
@@ -184,29 +210,29 @@ public class Game implements Serializable {
         player.setGame(null);
     }
     
-    //get scoreBoard
-    public Map<Long, Integer> getScoreBoard() {
-        return scoreBoard;
-    }
+    // //get scoreBoard
+    // public Map<Long, Integer> getScoreBoard() {
+    //     return scoreBoard;
+    // }
     
-    public void setScoreBoard(Map<Long, Integer> scoreBoard) {
-        this.scoreBoard = scoreBoard;
-    }
+    // public void setScoreBoard(Map<Long, Integer> scoreBoard) {
+    //     this.scoreBoard = scoreBoard;
+    // }
     
-    // update scoreBoard
-    public void updateScore(Long userId, Integer score) {
-        scoreBoard.put(userId, score);
-    }
+    // // update scoreBoard
+    // public void updateScore(Long userId, Integer score) {
+    //     scoreBoard.put(userId, score);
+    // }
     
-    // get specific user's score
-    public Integer getScore(Long userId) {
-        return scoreBoard.get(userId);
-    }
+    // // get specific user's score
+    // public Integer getScore(Long userId) {
+    //     return scoreBoard.get(userId);
+    // }
     
-    // remove specific user's score
-    public Integer removeScore(Long userId) {
-        return scoreBoard.remove(userId);
-    }
+    // // remove specific user's score
+    // public Integer removeScore(Long userId) {
+    //     return scoreBoard.remove(userId);
+    // }
     
     public Integer getMaxHints() {
         return maxHints;
@@ -303,11 +329,11 @@ public class Game implements Serializable {
     public void setCorrectAnswersMap(Map<Long, Integer> correctAnswersMap) {
         this.correctAnswersMap = correctAnswersMap;
     }
-
+    
     public LocalDateTime getStartTime() {
         return startTime;
     }
-
+    
     public void setStartTime(LocalDateTime startTime) {
         this.startTime = startTime;
     }
