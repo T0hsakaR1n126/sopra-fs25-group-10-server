@@ -9,6 +9,7 @@ import ch.uzh.ifi.hase.soprafs24.rest.dto.GameCreateResponseDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.LobbyJoinGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.LobbyJoinPostDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerAnswerDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerAuthDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GamePostDTO;
@@ -120,28 +121,51 @@ public class GameController {
         gameService.startGame(gameId, player);
     }
     
-    //   @PutMapping("/games/{gameId}/end")
-    //   @ResponseStatus(HttpStatus.NO_CONTENT)
-    //   public void submitScores(@PathVariable Long gameId, @RequestBody GamePostDTO gamePostDTO) {
-    //       gameService.submitScores(
-    //           gameId,
-    //           gamePostDTO.getScoreMap(),
-    //           gamePostDTO.getCorrectAnswersMap(),
-    //           gamePostDTO.getTotalQuestionsMap()
-    //       );
-    //   }
+    // @PutMapping("/games/{gameId}/end")
+    // @ResponseStatus(HttpStatus.NO_CONTENT)
+    // public void submitScores(@PathVariable Long gameId, @RequestBody GamePostDTO gamePostDTO) {
+    //     gameService.submitScores(
+    //     gameId,
+    //     gamePostDTO.getScoreMap(),
+    //     gamePostDTO.getCorrectAnswersMap(),
+    //     gamePostDTO.getTotalQuestionsMap()
+    //     );
+    // }
     
-    //   @GetMapping("/users/{userId}/history")
-    //   @ResponseStatus(HttpStatus.OK)
-    //   @ResponseBody
-    //   public List<GameGetDTO> getUserGameHistory(@PathVariable Long userId) {
+    // @GetMapping("/users/{userId}/history")
+    // @ResponseStatus(HttpStatus.OK)
+    // @ResponseBody
+    // public List<GameGetDTO> getUserGameHistory(@PathVariable Long userId) {
     //     return gameService.getGamesByUser(userId);
-    //   }
+    // }
     
-    //   @GetMapping("/leaderboard")
-    //   @ResponseStatus(HttpStatus.OK)
-    //   @ResponseBody
-    //   public List<GameGetDTO> getLeaderboard() {
+    @GetMapping("/game/{gameId}/scoreBoard")
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public List<PlayerDTO> getScoreboard(@PathVariable Long gameId) {
+        return gameService.getScoreBoard(gameId);
+    }
+    
+    // @GetMapping("/leaderboard")
+    // @ResponseStatus(HttpStatus.OK)
+    // @ResponseBody
+    // public List<GameGetDTO> getLeaderboard() {
     //     return gameService.getLeaderboard();
-    //   }
+    // }
+    
+    // @GetMapping("/game/{gameId}/{questionId}/hint/{hintId}")
+
+    // @PutMapping("/submit/{questionId}")
+    // @ResponseStatus(HttpStatus.OK)
+    // @ResponseBody
+    // public PlayerAnswerDTO answerProcessing(@PathVariable Long questionId, @RequestBody PlayerAnswerDTO playerAnswerDTO) {
+    //     return gameService.processingAnswer(playerAnswerDTO);
+    // }
+    
+    // @PutMapping("/giveup/{userId}")
+    // @ResponseStatus(HttpStatus.OK)
+    // @ResponseBody
+    // public void giveupGame(@PathVariable Long userId){
+    //     gameService.giveupGame(userId);
+    // }
 }

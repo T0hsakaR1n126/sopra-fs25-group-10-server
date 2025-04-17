@@ -27,7 +27,7 @@ public class GameGetDTO {
 
     private GameStatus gameStatus;
 
-    private Map<Long, Integer> scoreBoard;
+    // private Map<Long, Integer> scoreBoard;
 
     private String gameName;
 
@@ -141,13 +141,13 @@ public class GameGetDTO {
         this.currentPlayersNumber = currentPlayersNumber;
     }   
 
-    public Map<Long, Integer> getScoreBoard() {
-        return scoreBoard;
-    }
+    // public Map<Long, Integer> getScoreBoard() {
+    //     return scoreBoard;
+    // }
 
-    public void setScoreBoard(Map<Long, Integer> scoreBoard) {
-        this.scoreBoard = scoreBoard;
-    }
+    // public void setScoreBoard(Map<Long, Integer> scoreBoard) {
+    //     this.scoreBoard = scoreBoard;
+    // }
 
     public Integer getTime() {
         return time;

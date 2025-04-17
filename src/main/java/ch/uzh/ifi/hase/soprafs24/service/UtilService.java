@@ -26,8 +26,8 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 @Service
 @Transactional
 public class UtilService {
-    private static final int FILL_SIZE = 20;
-    private static final int HINT_NUMBER = 5;
+    private static final int FILL_SIZE = 10; //10 countires in the beginning instead of 20
+    private static final int HINT_NUMBER = 6; //changed to 6 from 5 since first hint is free
 
     private static final String GEMINI_API_KEY = "AIzaSyDOukvhZmaQlP38T1bdTGGnc5X-TYRr_Gc";
     private static final String MODEL_URL =
@@ -169,6 +169,5 @@ public class UtilService {
         result.put(country, clueList);
         return result;
     }
-
 
 }

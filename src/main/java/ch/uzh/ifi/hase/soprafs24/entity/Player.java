@@ -58,10 +58,32 @@ public class Player implements Serializable {
     private String playerName;
 
     @Column(nullable = true)
-    private String correctAnswers;
+    private String correctQuestions;
     
     @Column(nullable = true)
     private Long questionId;
+
+    @Column(nullable = true)
+    private Long skippedQuestions;
+    
+    @Column(nullable = true)
+    private int currentHint; //int to make default 0
+
+    public Long getSkippedQuestions() {
+        return skippedQuestions;
+    }
+
+    public void setSkippedQuestions(Long skippedQuestions) {
+        this.skippedQuestions = skippedQuestions;
+    }
+
+    public int getCurrentHint() {
+        return currentHint;
+    }
+
+    public void setCurrentHint(int currentHint) {
+        this.currentHint = currentHint;
+    }
 
     public Long getQuestionId() {
         return questionId;
@@ -69,17 +91,6 @@ public class Player implements Serializable {
 
     public void setQuestionId(Long questionId) {
         this.questionId = questionId;
-    }
-
-    @Column(nullable = true)
-    private int currentHint; //int to make default 0
-    
-    public String getCorrectAnswers() {
-        return correctAnswers;
-    }
-
-    public void setCorrectAnswers(String correctAnswers) {
-        this.correctAnswers = correctAnswers;
     }
 
     public String getPlayerName() {

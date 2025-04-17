@@ -53,13 +53,39 @@ public class Game implements Serializable {
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Team> teams = new ArrayList<>();
     
+    @ElementCollection
+    @CollectionTable(name = "game_hints", joinColumns = @JoinColumn(name = "gameId"))
+    private List<HintEntry> hintEntries = new ArrayList<>();
+
+    public List<HintEntry> getHintEntries() {
+        return hintEntries;
+    }
+
+    public void setHintEntries(List<HintEntry> hintsMap) {
+        this.hintEntries = hintsMap;
+    }
+
+    @ElementCollection
+    @CollectionTable(name = "game_answers", joinColumns = @JoinColumn(name = "gameId"))
+    @MapKeyColumn(name = "questionId")
+    @Column(name = "answerText")
+    private Map<Long, String> answersMap = new HashMap<>(); // questionId -> answerText
+
     // @ElementCollection
-    // @CollectionTable(name = "scoreboard", joinColumns = @JoinColumn(name = "gameId"))
+    // @CollectionTable(name = "scoreBoard", joinColumns = @JoinColumn(name = "gameId"))
     // @MapKeyColumn(name = "playerId")
     // @Column(name = "playerScore")
     // private Map<Long, Integer> scoreBoard = new HashMap<>();
     
-    public List<PlayerDTO> getSortedScoreboard() {
+    public Map<Long, String> getAnswersMap() {
+        return answersMap;
+    }
+
+    public void setAnswersMap(Map<Long, String> answersMap) {
+        this.answersMap = answersMap;
+    }
+
+    public List<PlayerDTO> getScoreBoard() {
         if (players == null || players.isEmpty()) return Collections.emptyList();
     
         return players.stream()

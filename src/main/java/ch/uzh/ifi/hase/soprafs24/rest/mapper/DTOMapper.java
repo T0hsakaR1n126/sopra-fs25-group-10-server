@@ -64,7 +64,7 @@ public interface DTOMapper {
     
     @Mapping(source = "ownerId", target = "ownerId")
     //  @Mapping(target = "ownerName", expression = "java(userRepository.findByUserId(game.getOwnerId()).getUsername())")
-    @Mapping(source = "scoreBoard", target = "scoreBoard")
+    // @Mapping(source = "scoreBoard", target = "scoreBoard")
     @Mapping(source = "gameName", target = "gameName") 
     @Mapping(source = "maxPlayersNumber", target = "maxPlayersNumber")
     @Mapping(source = "currentPlayersNumber", target = "currentPlayersNumber")
@@ -75,7 +75,7 @@ public interface DTOMapper {
     @Mapping(source = "modeType", target = "modeType")
     @Mapping(source = "accessType", target = "accessType")
     @Mapping(source = "endTime", target = "endTime")
-    @Mapping(source = "finalScore", target = "finalScore")
+    // @Mapping(source = "finalScore", target = "finalScore")
     @Mapping(source = "gameCreationDate", target = "gameCreationDate")
     @Mapping(source = "maxHints", target = "maxHints")
     GameGetDTO convertGameEntityToGameGetDTO(Game game);
@@ -100,7 +100,7 @@ public interface DTOMapper {
     @Mapping(source = "user.userId", target = "userId")
     @Mapping(source = "game.gameId", target = "gameId")
     @Mapping(source = "score", target = "score")
-    @Mapping(source = "game.gameStatus", target = "gameStatus")
+    // @Mapping(source = "game.gameStatus", target = "gameStatus")
     // @Mapping(source = "playerStatus", target = "playerStatus")
     PlayerDTO convertPlayerToPlayerDTO(Player user);
     
@@ -123,7 +123,7 @@ public interface DTOMapper {
     @Mapping(source = "player", target = "player")
     GameCreateResponseDTO convertGameToGameCreateResponseDTO(Game game, Player player);
     
-    @Mapping(source = "game.gameId", target = "Id")
-    @Mapping(source = "hints", target = "hints")
-    GameHintDTO convertGameHintDTOToGameHintDTO(Game game);
+    // @Mapping(source = "game.gameId", target = "Id")
+    // @Mapping(source = "hints", target = "hints")
+    // GameHintDTO convertGameHintDTOToGameHintDTO(Game game);
 }
