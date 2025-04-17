@@ -57,9 +57,20 @@ public class Player implements Serializable {
     @Column(nullable = true, unique = true)
     private String playerName;
 
+    @Column(nullable = false)
+    private Long totalQuestions;
+
     @Column(nullable = true)
-    private String correctQuestions;
+    private Long correctQuestions;
     
+    public Long getCorrectQuestions() {
+        return correctQuestions;
+    }
+
+    public void setCorrectQuestions(Long correctQuestions){
+        this.correctQuestions = correctQuestions;
+    }
+
     @Column(nullable = true)
     private Long questionId;
 
@@ -67,7 +78,7 @@ public class Player implements Serializable {
     private Long skippedQuestions;
     
     @Column(nullable = true)
-    private int currentHint; //int to make default 0
+    private Integer currentHint;
 
     public Long getSkippedQuestions() {
         return skippedQuestions;
@@ -77,11 +88,11 @@ public class Player implements Serializable {
         this.skippedQuestions = skippedQuestions;
     }
 
-    public int getCurrentHint() {
+    public Integer getCurrentHint() {
         return currentHint;
     }
 
-    public void setCurrentHint(int currentHint) {
+    public void setCurrentHint(Integer currentHint) {
         this.currentHint = currentHint;
     }
 
@@ -217,15 +228,11 @@ public class Player implements Serializable {
     
     public Integer getTotalHints() {
         return totalHints;
-    }
-    
-    public void getHint() {
-        this.hintsLeft= this.totalHints-1;
-    }
-    
+    }    
+ 
     public void useHint() {
         if (hintsLeft > 0) {
-            this.hintsLeft= this.totalHints-1;
+            this.hintsLeft -= 1 ;
         } else {
             throw new IllegalStateException("No more hints available");
         }
@@ -233,5 +240,17 @@ public class Player implements Serializable {
     
     public Integer getHintsLeft() {
         return hintsLeft;
+    }
+
+    public void setHintsLeft(Integer hintsLeft) {
+        this.hintsLeft = hintsLeft;
+    }
+
+    public Long getTotalQuestions() {
+        return totalQuestions;
+    }
+
+    public void setTotalQuestions(Long totalQuestions) {
+        this.totalQuestions = totalQuestions;
     }
 }

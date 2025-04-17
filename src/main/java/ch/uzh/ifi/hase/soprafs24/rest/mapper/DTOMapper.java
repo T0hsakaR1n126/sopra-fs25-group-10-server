@@ -7,7 +7,6 @@ import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameCreateResponseDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameGetDTO;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.GameHintDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.LobbyJoinGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerAuthDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerDTO;

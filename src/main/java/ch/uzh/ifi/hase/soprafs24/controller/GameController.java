@@ -14,6 +14,8 @@ import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerAuthDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GamePostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameStartDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.HintGetDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.HintPostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserPostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
@@ -29,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 /**
 * User Controller
@@ -153,8 +156,23 @@ public class GameController {
     //     return gameService.getLeaderboard();
     // }
     
-    // @GetMapping("/game/{gameId}/{questionId}/hint/{hintId}")
-
+    @GetMapping("/game/{gameId}/{questionId}/hint/{hintId}")
+    public HintGetDTO getHintForPlayer(
+    @PathVariable Long gameId,
+    @PathVariable Long questionId,
+    @PathVariable Integer hintId,
+    @RequestBody HintPostDTO hintPostDTO
+    ) {
+        return gameService.getHint( gameId,
+                                    hintPostDTO.getPlayerId(),
+                                    hintPostDTO.getToken(),
+                                    hintId,
+                                    questionId
+                                    );
+    }
+    
+    
+    
     // @PutMapping("/submit/{questionId}")
     // @ResponseStatus(HttpStatus.OK)
     // @ResponseBody

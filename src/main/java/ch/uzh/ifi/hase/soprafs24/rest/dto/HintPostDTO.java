@@ -1,23 +1,41 @@
 package ch.uzh.ifi.hase.soprafs24.rest.dto;
 
 public class HintPostDTO {
-    private String hint;
-    private String hintType;
-    // private String countryCode;
+    private Long playerId;
+    private String token;
+    // private String hintText;
+    private Integer difficulty;
 
-    public String getHint() {
-        return hint;
+    public String getToken() {
+        return token;
     }
 
-    public void setHint(String hint) {
-        this.hint = hint;
+    public void setToken(String token) {
+        this.token = token;
     }
 
-    public String getHintType() {
-        return hintType;
+    public Long getPlayerId() {
+        return playerId;
     }
 
-    public void setHintType(String hintType) {
-        this.hintType = hintType;
+    public void setPlayerId(Long playerId) {
+        this.playerId = playerId;
+    }
+
+
+    // public String getHintText() {
+    //     return hintText;
+    // }
+
+    // public void setHintText(String hintText) {
+    //     this.hintText = hintText;
+    // }
+
+    public Integer getDifficulty() {
+        return difficulty;
+    }
+
+    public void setDifficulty(Integer difficulty) {
+        this.difficulty = difficulty;
     }
 }

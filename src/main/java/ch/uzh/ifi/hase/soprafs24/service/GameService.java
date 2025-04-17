@@ -22,6 +22,7 @@ import ch.uzh.ifi.hase.soprafs24.rest.dto.GameCreateResponseDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GamePostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameStartDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.HintGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserHistoryDTO;
@@ -30,6 +31,7 @@ import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
 import ch.uzh.ifi.hase.soprafs24.service.UtilService;
 import ch.uzh.ifi.hase.soprafs24.constant.Country;
 
+import org.hibernate.query.criteria.internal.expression.function.AggregationFunction.MAX;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +44,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -488,13 +491,62 @@ public class GameService {
         LocalDateTime endTime = startTime.plusSeconds(gameToStart.getTime() + 1);
         gameToStart.setEndTime(endTime);
         
-        generatedHints = getHintsOfOneCountry();
+        
+        generatedHints = waitForHintGeneration();
         gameToStart = saveHintsAndAnswersToGame(gameToStart, generatedHints);     
         
-        // save the game with the updated information (start time, end time, game status, etc.)
+        setQuestionStartingScore(gameId);
+
         gameRepository.save(gameToStart);
         startGameTimer(gameToStart);
         gameRepository.flush();
+    }
+
+    private void setQuestionStartingScore(Long gameId) {
+        List<Player> players = playerRepository.findByGame_GameId(gameId);
+        
+        for (Player player : players) {
+            player.setCurrentHint(0); //set current hint to 0
+            player.setQuestionId(1L); //set current question to 1
+            player.setHintsLeft(GameHints.MAX_HINTS); //set hints left to max hints
+            player.setTotalQuestions(1L);
+            if (player.getScore() == null) {
+                player.setScore(100);
+                // if player starting then set correct questions to 0
+                player.setCorrectQuestions(0L);
+            } else {
+                player.setScore(player.getScore() + 100);
+            }
+            playerRepository.save(player);
+        }
+        System.out.println("Scores updated for all players in game ");
+    }
+
+    private Map<Country, List<Map<String, Object>>> waitForHintGeneration() {
+        Map<Country, List<Map<String, Object>>> generatedHints = null;
+        boolean hintsGenerated = false;
+        int retryCount = 0;
+        
+        while (!hintsGenerated && retryCount < 3) {
+            try {
+                generatedHints = getHintsOfOneCountry();
+                hintsGenerated = true;
+            } catch (Exception e) {
+                retryCount++;
+                System.err.println("Error generating hints, retrying... Attempt: " + retryCount);
+                
+                if (retryCount < 3) {
+                    try {
+                        Thread.sleep(3000);
+                    } catch (InterruptedException interruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
+                } else {
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to generate hints after several retries.");
+                }
+            }
+        }
+        return generatedHints;
     }
     
     private void startGameTimer(Game game) {
@@ -532,31 +584,30 @@ public class GameService {
     }
     
     public Game saveHintsAndAnswersToGame(Game game, Map<Country, List<Map<String, Object>>> hintSet) {
-
-        long nextQuestionId = game.getHintEntries().stream()
-            .mapToLong(HintEntry::getQuestionId)
-            .max()
-            .orElse(0L) + 1;
-    
+        
+        Long nextQuestionId = game.getHintEntries().stream()
+        .mapToLong(HintEntry::getQuestionId)
+        .max()
+        .orElse(0L) + 1;
+        
         Country country = hintSet.keySet().iterator().next();
         List<Map<String, Object>> hints = hintSet.get(country);
-    
+        
         List<HintEntry> hintEntries = new ArrayList<>();
-    
+        
         for (Map<String, Object> hint : hints) {
             String text = (String) hint.get("text");
             Integer difficulty = (Integer) hint.get("difficulty");
-    
+            
             HintEntry entry = new HintEntry(nextQuestionId, text, difficulty - 1); // Adjust to 0-5 difficulty
             hintEntries.add(entry);
         }
-    
+        
         game.getHintEntries().addAll(hintEntries);
         game.getAnswersMap().put(nextQuestionId, country.name());
-    
+        
         return game;
     }
-    
     
     public List<PlayerDTO> getScoreBoard(Long gameId) {
         Game game = gameRepository.findById(gameId)
@@ -580,39 +631,57 @@ public class GameService {
         return players;
     }
     
-    // public List<UserHistoryDTO> getUserGameHistory(Long userId) {
-    //     User user = userRepository.findById(userId)
-    //     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+    public HintGetDTO getHint(Long gameId, Long playerId, String token, Integer hintId, Long questionId) {
+        Game game = gameRepository.findBygameId(gameId);
+        if (game == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found.");
+        }
     
+        Player player = playerRepository.findByPlayerId(playerId);
+        if (player == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found.");
+        }
     
-    //     return playerRepository.finByUser_UserIdList(userId).stream()
-    //     .map(gameId -> gameRepository.findById(gameId).orElse(null))
-    //     .filter(Objects::nonNull)
-    //     .filter(game -> game.getEndTime() != null)
-    //     .map(game -> {
-    //         UserHistoryDTO historyDTO = new UserHistoryDTO();
+        if (!player.getToken().equals(token)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid player token.");
+        }
     
-    //         GameGetDTO gameDTO = DTOMapper.INSTANCE.convertGameEntityToGameGetDTO(game);
-    //         gameDTO.setCorrectAnswers(game.getCorrectAnswersMap().get(userId));
-    //         gameDTO.setTotalQuestions(game.getTotalQuestionsMap().get(userId));
-    //         gameDTO.setResultSummary(game.getResultSummaryMap().get(userId));
+        // validate questionId
+        Long currentQuestion = player.getQuestionId();
+        if (!questionId.equals(currentQuestion)) {
+            if (questionId < currentQuestion) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot ask for a previously attempted question.");
+            } else {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot ask for a future question.");
+            }
+        }
     
-    //         List<String> playerUsernames = game.getPlayers().stream()
-    //         .map(pid -> userRepository.findByUserId(pid))
-    //         .filter(Objects::nonNull)
-    //         .map(User::getUsername)
-    //         .collect(Collectors.toList());
+        Integer currentHint = player.getCurrentHint();
+        if (hintId > currentHint + 1 || hintId < 0 || hintId > game.getMaxHints()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid hint request order.");
+        }
     
-    //         historyDTO.setGame(gameDTO);
-    //         historyDTO.setPlayers(playerUsernames);
-    //         historyDTO.setCorrectAnswers(game.getCorrectAnswersMap().getOrDefault(userId, 0));
+        // Deduct hint
+        if(hintId == currentHint + 1){
+            player.useHint();
+            player.setScore(player.getScore() - 20);
+            player.setCurrentHint(hintId);
+            playerRepository.save(player);
+        }
+
+        HintEntry selectedHint = game.getHintEntries().stream()
+        .filter(h -> h.getQuestionId().equals(questionId))
+        .filter(h -> h.getDifficulty().equals(hintId))
+        .findFirst()
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Hint not found"));
     
-    //         return historyDTO;
-    //     })
-    //     .collect(Collectors.toList());
-    // }
+        HintGetDTO dto = new HintGetDTO();
+        dto.setHintText(selectedHint.getText());
+        return dto;
+    }
     
-    
+
     // public GameGetDTO processingAnswer(GamePostDTO gamePostDTO, Long userId){
     
     //     //judge right or wrong and update hints
@@ -749,5 +818,39 @@ public class GameService {
     //     leaderboard.sort((a, b) -> b.getTotalScore().compareTo(a.getTotalScore()));
     
     //     return leaderboard;
+    
+    // public List<UserHistoryDTO> getUserGameHistory(Long userId) {
+    //     User user = userRepository.findById(userId)
+    //     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    
+    
+    //     return playerRepository.finByUser_UserIdList(userId).stream()
+    //     .map(gameId -> gameRepository.findById(gameId).orElse(null))
+    //     .filter(Objects::nonNull)
+    //     .filter(game -> game.getEndTime() != null)
+    //     .map(game -> {
+    //         UserHistoryDTO historyDTO = new UserHistoryDTO();
+    
+    //         GameGetDTO gameDTO = DTOMapper.INSTANCE.convertGameEntityToGameGetDTO(game);
+    //         gameDTO.setCorrectAnswers(game.getCorrectAnswersMap().get(userId));
+    //         gameDTO.setTotalQuestions(game.getTotalQuestionsMap().get(userId));
+    //         gameDTO.setResultSummary(game.getResultSummaryMap().get(userId));
+    
+    //         List<String> playerUsernames = game.getPlayers().stream()
+    //         .map(pid -> userRepository.findByUserId(pid))
+    //         .filter(Objects::nonNull)
+    //         .map(User::getUsername)
+    //         .collect(Collectors.toList());
+    
+    //         historyDTO.setGame(gameDTO);
+    //         historyDTO.setPlayers(playerUsernames);
+    //         historyDTO.setCorrectAnswers(game.getCorrectAnswersMap().getOrDefault(userId, 0));
+    
+    //         return historyDTO;
+    //     })
+    //     .collect(Collectors.toList());
+    // }
+    
+    
     // }
 }

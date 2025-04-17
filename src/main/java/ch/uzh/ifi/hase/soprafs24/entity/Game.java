@@ -142,11 +142,11 @@ public class Game implements Serializable {
     @Column(nullable = true)
     private Integer finalScore;
     
-    @ElementCollection
-    @CollectionTable(name = "correct_answers", joinColumns = @JoinColumn(name = "gameId"))
-    @MapKeyColumn(name = "userId")
-    @Column(name = "correct")
-    private Map<Long, Integer> correctAnswersMap = new HashMap<>();
+    // @ElementCollection
+    // @CollectionTable(name = "correct_answers", joinColumns = @JoinColumn(name = "gameId"))
+    // @MapKeyColumn(name = "userId")
+    // @Column(name = "correct")
+    // private Map<Long, Integer> correctAnswersMap = new HashMap<>();
     
     @ElementCollection
     @CollectionTable(name = "total_questions", joinColumns = @JoinColumn(name = "gameId"))
@@ -348,13 +348,13 @@ public class Game implements Serializable {
         this.totalQuestionsMap = totalQuestionsMap;
     }
     
-    public Map<Long, Integer> getCorrectAnswersMap() {
-        return correctAnswersMap;
-    }
+    // public Map<Long, Integer> getCorrectAnswersMap() {
+    //     return correctAnswersMap;
+    // }
     
-    public void setCorrectAnswersMap(Map<Long, Integer> correctAnswersMap) {
-        this.correctAnswersMap = correctAnswersMap;
-    }
+    // public void setCorrectAnswersMap(Map<Long, Integer> correctAnswersMap) {
+    //     this.correctAnswersMap = correctAnswersMap;
+    // }
     
     public LocalDateTime getStartTime() {
         return startTime;

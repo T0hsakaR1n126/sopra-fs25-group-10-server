@@ -35,7 +35,7 @@ public class HintEntry {
 
     public HintEntry(){}
 
-    public HintEntry(long questionId, String text, int difficulty) {
+    public HintEntry(Long questionId, String text, Integer difficulty) {
         this.questionId = questionId;
         this.text = text;
         this.difficulty = difficulty;
