@@ -1,5 +1,7 @@
 package ch.uzh.ifi.hase.soprafs24.rest.dto;
 
+import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
+import ch.uzh.ifi.hase.soprafs24.constant.PlayerStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.Player;
 
 public class PlayerDTO {
@@ -8,15 +10,24 @@ public class PlayerDTO {
     private Long teamId;
     private String teamName;
     private Long gameId;
-    private Long gameStatus;
+    private GameStatus gameStatus;
+    private PlayerStatus playerStatus;
     private Long userId;
     private Integer score;
 
-    public Long getGameStatus() {
+    public PlayerStatus getPlayerStatus() {
+        return playerStatus;
+    }
+
+    public void setPlayerStatus(PlayerStatus playerStatus) {
+        this.playerStatus = playerStatus;
+    }
+
+    public GameStatus getGameStatus() {
         return gameStatus;
     }
 
-    public void setGameStatus(Long gameStatus) {
+    public void setGameStatus(GameStatus gameStatus) {
         this.gameStatus = gameStatus;
     }
 

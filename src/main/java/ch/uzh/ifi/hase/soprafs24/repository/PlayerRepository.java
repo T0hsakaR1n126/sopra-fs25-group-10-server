@@ -25,5 +25,5 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
     // query for getting players at once
     @Query("SELECT p FROM Player p WHERE p.game.gameId = :gameId AND p.playerStatus = :status")
     List<Player> findPlayersInGameWithStatus(@Param("gameId") Long gameId, @Param("status") PlayerStatus status);
-    List<Long> findByUser_UserId(Long userId);
+    List<Player> findByUser_UserId(Long userId);
 }

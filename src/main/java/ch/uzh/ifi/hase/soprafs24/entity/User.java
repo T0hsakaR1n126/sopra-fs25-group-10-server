@@ -7,7 +7,9 @@ import javax.persistence.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -56,11 +58,17 @@ public class User implements Serializable {
     private String bio;
     
     @ElementCollection
-    @CollectionTable(name = "countryProgress", joinColumns = @JoinColumn(name = "userId"))
-    @MapKeyColumn(name = "country")
-    @Column(name = "correctGuesses")
-    private Map<Long, Integer> countryProgress = new HashMap<>();
-        
+    @CollectionTable(name = "country_progress", joinColumns = @JoinColumn(name = "user_id"))
+    private List<CountryProgressEntry> countryProgress = new ArrayList<>();
+    
+    public List<CountryProgressEntry> getCountryProgress() {
+        return countryProgress;
+    }
+
+    public void setCountryProgress(List<CountryProgressEntry> countryProgress) {
+        this.countryProgress = countryProgress;
+    }
+
     @ManyToOne
     @JoinColumn(name = "gameId", nullable = true)
     private Game game;

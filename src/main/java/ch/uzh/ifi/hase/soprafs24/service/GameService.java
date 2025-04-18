@@ -10,6 +10,7 @@ import ch.uzh.ifi.hase.soprafs24.constant.GuessResult;
 import ch.uzh.ifi.hase.soprafs24.constant.PlayerStatus;
 import ch.uzh.ifi.hase.soprafs24.constant.TeamStatus;
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
+import ch.uzh.ifi.hase.soprafs24.entity.CountryProgressEntry;
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
 import ch.uzh.ifi.hase.soprafs24.entity.HintEntry;
 import ch.uzh.ifi.hase.soprafs24.entity.Player;
@@ -24,8 +25,11 @@ import ch.uzh.ifi.hase.soprafs24.rest.dto.GameGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GamePostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameStartDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.HintGetDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.OneVsOneResultDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerResultDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.SoloResultDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.TeamVsTeamResultDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserHistoryDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameGetDTO;
@@ -285,6 +289,33 @@ public class GameService {
         return gameRepository.findBygameId(gameId);
     }
     
+    public List<PlayerDTO> getUserHistory(Long userId) {
+        User user = userRepository.findByUserId(userId);
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
+        
+        List<Player> players = playerRepository.findByUser_UserId(userId);
+        List<PlayerDTO> playerDTOs = new ArrayList<>();
+        
+        for (Player player : players) {
+            Game game = player.getGame();
+            
+            if (game != null && game.getGameStatus() == GameStatus.FINISHED) {
+                PlayerDTO playerDTO = dtoMapper.convertPlayerToPlayerDTO(player);
+                playerDTO.setGameId(game.getGameId());
+                playerDTO.setGameStatus(player.getGame().getGameStatus());
+                playerDTO.setScore(player.getScore());
+                playerDTO.setPlayerStatus(player.getPlayerStatus());
+                playerDTO.setTeamId(player.getTeam() != null ? player.getTeam().getTeamId() : null);
+                playerDTO.setTeamName(player.getTeam() != null ? player.getTeam().getTeamName() : null);
+                playerDTOs.add(playerDTO);
+            }
+        }
+        
+        return playerDTOs;
+    }
+    
     public Player userJoinGame(Long gameId, Long userId, String password) {
         Game targetGame = gameRepository.findBygameId(gameId);
         
@@ -298,7 +329,7 @@ public class GameService {
         }
         
         if (targetGame.getGameStatus() != GameStatus.WAITING) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You can't join this game because it is already started!");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You can't join this game because it is already started or finished!");
         }
         
         // Check if the game is already full
@@ -406,6 +437,16 @@ public class GameService {
     
     public void playerExitGame(Long playerId) {
         Player exitingPlayer = playerRepository.findByPlayerId(playerId);
+        if(exitingPlayer == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found.");
+        }
+        
+        if (exitingPlayer.getPlayerStatus() != PlayerStatus.PLAYING) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Player cannot exit a game he is not playing.");
+        }
+        if (exitingPlayer.getGame() == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Player is not in any game.");
+        }
         Game targetGame = exitingPlayer.getGame();
         
         if (targetGame == null) {
@@ -503,9 +544,9 @@ public class GameService {
         gameRepository.save(gameToStart);
         startGameTimer(gameToStart);
         gameRepository.flush();
-
+        
         messagingTemplate.convertAndSend("/topic/start/" + gameId + "/scoreboard", getScoreBoard(gameId));
-
+        
     }
     
     private void setGameStartingScore(Long gameId) {
@@ -529,7 +570,7 @@ public class GameService {
         
         System.out.println("Scores updated for all players in game ");
         messagingTemplate.convertAndSend("/topic/start/" + gameId + "/scoreboard", getScoreBoard(gameId));
-
+        
     }
     
     private void setQuestionStartingScore(Long playerId) {
@@ -588,11 +629,14 @@ public class GameService {
                 
                 if (secondsLeft <= 0) {
                     game.setGameStatus(GameStatus.FINISHED);
+                    finalizePlayerScores(game);
                     gameRepository.save(game);
                     messagingTemplate.convertAndSend("/topic/game/" + gameId + "/end", "Game Over!");
+                    System.out.println("Game " + gameId + " ended.");
                     timer.cancel();
                 } else {
                     messagingTemplate.convertAndSend("/topic/game/" + gameId + "/timer", secondsLeft);
+                    // System.out.println("Time left for game " + gameId + ": " + secondsLeft + " seconds");                
                 }
             }
         };
@@ -600,7 +644,7 @@ public class GameService {
         timer.scheduleAtFixedRate(task, 0, 1000);
         runningTimers.put(gameId, timer);
         messagingTemplate.convertAndSend("/topic/start/" + gameId + "/scoreboard", getScoreBoard(gameId));
-
+        
     }
     
     public Map<Country, List<Map<String, Object>>> getHintsOfOneCountry() {
@@ -642,7 +686,36 @@ public class GameService {
         Game game = gameRepository.findById(gameId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
         
+        // if(game.getGameStatus() != GameStatus.ACTIVE || game.getGameStatus() != GameStatus.FINISHED) {
+        //     throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Game is neither active nor finished to fetch scoreboard.");
+        // }
         return game.getScoreBoard();
+    }
+    
+    private void finalizePlayerScores(Game game) {
+        List<Player> players = game.getPlayers();
+        
+        for (Player player : players) {
+            player.setPlayerStatus(PlayerStatus.FINISHED);
+            Long questionId = player.getQuestionId();
+            Long correctQuestions = player.getCorrectQuestions() != null ? player.getCorrectQuestions() : 0L;
+            
+            // Case 1: Player quit immediately, no correct answers
+            if (questionId != null && questionId == 1L && correctQuestions == 0L) {
+                player.setScore(0);
+            } 
+            // Case 2: Played more than 1 question, deduct unearned points
+            else if (questionId != null && questionId > 1) {
+                Integer score = player.getScore() != null ? player.getScore() : 0;
+                Integer currentHint = player.getCurrentHint() != null ? player.getCurrentHint() : 0;
+                
+                // Deduct the unearned part of last question's 100 points
+                Integer deduction = 100 - (currentHint * 20);
+                player.setScore(Math.max(score - deduction, 0));
+            }
+            
+            playerRepository.save(player);
+        }
     }
     
     public List<Player> getPlayersByGameId(Long gameId) {
@@ -673,6 +746,10 @@ public class GameService {
         
         if (!player.getToken().equals(token)) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid player token.");
+        }
+        
+        if (player.getPlayerStatus() != PlayerStatus.PLAYING) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Player is not playing the game anymore.");
         }
         
         // validate questionId
@@ -706,6 +783,9 @@ public class GameService {
         
         HintGetDTO dto = new HintGetDTO();
         dto.setHintText(selectedHint.getText());
+        
+        messagingTemplate.convertAndSend("/topic/start/" + gameId + "/scoreboard", getScoreBoard(gameId));
+        System.out.println(getScoreBoard(gameId));
         return dto;
     }
     
@@ -725,6 +805,10 @@ public class GameService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid player or token.");
         }
         
+        if (player.getPlayerStatus() != PlayerStatus.PLAYING) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Player is not playing the game anymore.");
+        }
+        
         String correctAnswerStr = game.getAnswersMap().get(questionId);
         Country correctAnswer = Country.valueOf(correctAnswerStr);
         boolean isCorrect = correctAnswer.equals(submittedAnswer);
@@ -734,8 +818,37 @@ public class GameService {
         player.setTriesLeft(player.getTriesLeft() - 1);
         
         if (isCorrect) {
-            player.setScore(player.getScore() + 50); //awart 50 ponts extra for a correct guess
+            player.setScore(player.getScore() + 50); // Award 50 points for correct guess
             player.setCorrectQuestions(player.getCorrectQuestions() + 1);
+            
+            User user = player.getUser();
+            if (user != null) {
+                // Get the hint text based on questionId and current hint used
+                HintEntry hint = game.getHintEntries().stream()
+                .filter(h -> h.getQuestionId().equals(player.getQuestionId()) &&
+                h.getDifficulty().equals(player.getCurrentHint()))
+                .findFirst()
+                .orElse(null);
+                
+                if (hint != null) {
+                    String hintText = hint.getText();
+                    
+                    boolean alreadyTracked = user.getCountryProgress().stream()
+                    .anyMatch(entry ->
+                    entry.getCountry().equals(submittedAnswer) &&
+                    entry.getInfoLearnt().equals(hintText)
+                    );
+                    
+                    if (!alreadyTracked) {
+                        CountryProgressEntry entry = new CountryProgressEntry();
+                        entry.setCountry(submittedAnswer);
+                        entry.setInfoLearnt(hintText); // Just the hint text
+                        
+                        user.getCountryProgress().add(entry);
+                        userRepository.save(user);
+                    }
+                }
+            }
         }
         
         playerRepository.save(player);
@@ -744,9 +857,9 @@ public class GameService {
             result.setCorrectAnswer(correctAnswer);
             setQuestionStartingScore(playerId);
         }
-
+        
         messagingTemplate.convertAndSend("/topic/start/" + gameId + "/scoreboard", getScoreBoard(gameId));
-
+        
         return result;
     }
     
@@ -761,15 +874,19 @@ public class GameService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid player or token.");
         }
         
+        if (player.getPlayerStatus() != PlayerStatus.PLAYING) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Player is not playing the game anymore.");
+        }
+        
         player.setScore(player.getScore()- (100 - player.getCurrentHint()*20));
         player.setSkippedQuestions(Objects.requireNonNullElse(player.getSkippedQuestions(), 0L) + 1);
         playerRepository.save(player);
         setQuestionStartingScore(playerId);
-
+        
         messagingTemplate.convertAndSend("/topic/start/" + gameId + "/scoreboard", getScoreBoard(gameId));
-
+        
     }
-
+    
     public void playerForfiet(Long gameId, Long playerId, String token) {
         Game game = gameRepository.findBygameId(gameId);
         if (game == null) {
@@ -781,13 +898,129 @@ public class GameService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid player or token.");
         }
         
+        if (player.getPlayerStatus() != PlayerStatus.PLAYING) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Player is not playing the game anymore.");
+        }
         player.setPlayerStatus(PlayerStatus.FINISHED);
         playerRepository.save(player);
-
+        
         messagingTemplate.convertAndSend("/topic/start/" + gameId + "/scoreboard", getScoreBoard(gameId));
-
+        
     }
-
+    
+    public Object gameResult(Long gameId) {
+        Game game = gameRepository.findBygameId(gameId);
+        if (game == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found.");
+        }
+        
+        if(game.getGameStatus() != GameStatus.FINISHED) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Game is not finished yet.");
+        }
+        
+        GameMode mode = game.getModeType();
+        Object resultDTO;
+        
+        switch (mode) {
+            case SOLO:
+            resultDTO = buildSoloResult(game);
+            break;
+            case ONE_VS_ONE:
+            resultDTO = build1v1Result(game);
+            break;
+            case TEAM_VS_TEAM:
+            resultDTO = buildTeamVsTeamResult(game);
+            break;
+            default:
+            throw new IllegalStateException("Unexpected game mode: " + mode);
+        }
+        
+        messagingTemplate.convertAndSend("/topic/game/" + gameId + "/end", resultDTO);
+        return resultDTO;
+    }
+    
+    private SoloResultDTO buildSoloResult(Game game) {
+        List<PlayerDTO> scoreboard = game.getScoreBoard();
+        PlayerDTO player = scoreboard.isEmpty() ? null : scoreboard.get(0);
+        
+        SoloResultDTO result = new SoloResultDTO();
+        result.setPlayer(player);
+        result.setScoreboard(scoreboard);
+        
+        return result;
+    }
+    
+    private OneVsOneResultDTO build1v1Result(Game game) {
+        List<PlayerDTO> scoreboard = game.getScoreBoard();
+        
+        if (scoreboard.size() < 2) {
+            throw new IllegalStateException("Not enough players for 1v1 result");
+        }
+        
+        PlayerDTO player1 = scoreboard.get(0);
+        PlayerDTO player2 = scoreboard.get(1);
+        
+        OneVsOneResultDTO result = new OneVsOneResultDTO();
+        result.setScoreboard(scoreboard);
+        
+        if (player1.getScore().equals(player2.getScore())) {
+            //tie
+            result.setWinner(player1);
+            result.setLoser(player2);
+            result.setDraw(true);
+        } else {
+            result.setWinner(player1);
+            result.setLoser(player2);
+            result.setDraw(false);
+        }
+        
+        return result;
+    }   
+    
+    private TeamVsTeamResultDTO buildTeamVsTeamResult(Game game) {
+        List<PlayerDTO> scoreboard = game.getScoreBoard();
+        
+        Map<Long, Integer> teamScores = new HashMap<>();
+        Map<Long, String> teamNames = new HashMap<>();
+        
+        for (PlayerDTO p : scoreboard) {
+            Long teamId = p.getTeamId();
+            if (teamId == null) continue;
+            teamScores.put(teamId, teamScores.getOrDefault(teamId, 0) + p.getScore());
+            teamNames.putIfAbsent(teamId, p.getTeamName());
+        }
+        
+        if (teamScores.size() != 2) {
+            throw new IllegalStateException("Expected exactly two teams in TEAM_VS_TEAM mode.");
+        }
+        
+        List<Map.Entry<Long, Integer>> sortedTeams = new ArrayList<>(teamScores.entrySet());
+        sortedTeams.sort((a, b) -> b.getValue().compareTo(a.getValue())); // Descending
+        
+        Long winningTeamId = sortedTeams.get(0).getKey();
+        Long losingTeamId = sortedTeams.get(1).getKey();
+        
+        TeamVsTeamResultDTO result = new TeamVsTeamResultDTO();
+        result.setWinner(teamNames.get(winningTeamId));
+        result.setLoser(teamNames.get(losingTeamId));
+        result.setTeam1Score(teamScores.get(winningTeamId));
+        result.setTeam2Score(teamScores.get(losingTeamId));
+        result.setScoreboard(scoreboard);
+        
+        if (teamScores.get(winningTeamId).equals(teamScores.get(losingTeamId))) {
+            result.setDraw(true);
+            result.setWinner(null);
+            result.setLoser(null);
+        } else {
+            result.setDraw(false);
+            result.setWinner(teamNames.get(winningTeamId));
+            result.setLoser(teamNames.get(losingTeamId));
+        }
+        
+        return result;
+    }
+    
+    
     // public void submitScores(Long gameId,Map<Long, Integer> scoreMap, Map<Long, Integer> correctAnswersMap, Map<Long, Integer> totalQuestionsMap) {
     //     Game game = gameRepository.findBygameId(gameId);
     

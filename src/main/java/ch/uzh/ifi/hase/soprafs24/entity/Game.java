@@ -97,8 +97,9 @@ public class Game implements Serializable {
                 dto.setTeamId(player.getTeam() != null ? player.getTeam().getTeamId() : null);
                 dto.setTeamName(player.getTeam() != null ? player.getTeam().getTeamName() : null);
                 dto.setGameId(this.getGameId()); 
-                dto.setGameStatus(gameId);
-                dto.setUserId(player.getUser().getUserId());
+                dto.setGameStatus(player.getGame().getGameStatus());
+                dto.setPlayerStatus(player.getPlayerStatus());
+                dto.setUserId(player.getUser() != null ? player.getUser().getUserId() : null);
                 dto.setScore(player.getScore());
     
                 return dto;
@@ -148,17 +149,17 @@ public class Game implements Serializable {
     // @Column(name = "correct")
     // private Map<Long, Integer> correctAnswersMap = new HashMap<>();
     
-    @ElementCollection
-    @CollectionTable(name = "total_questions", joinColumns = @JoinColumn(name = "gameId"))
-    @MapKeyColumn(name = "userId")
-    @Column(name = "total")
-    private Map<Long, Integer> totalQuestionsMap = new HashMap<>();
+    // @ElementCollection
+    // @CollectionTable(name = "total_questions", joinColumns = @JoinColumn(name = "gameId"))
+    // @MapKeyColumn(name = "userId")
+    // @Column(name = "total")
+    // private Map<Long, Integer> totalQuestionsMap = new HashMap<>();
     
-    @ElementCollection
-    @CollectionTable(name = "result_summaries", joinColumns = @JoinColumn(name = "gameId"))
-    @MapKeyColumn(name = "userId")
-    @Column(name = "summary")
-    private Map<Long, String> resultSummaryMap = new HashMap<>();
+    // @ElementCollection
+    // @CollectionTable(name = "result_summaries", joinColumns = @JoinColumn(name = "gameId"))
+    // @MapKeyColumn(name = "userId")
+    // @Column(name = "summary")
+    // private Map<Long, String> resultSummaryMap = new HashMap<>();
     
     public Long getGameId() {
         return gameId;
@@ -332,21 +333,21 @@ public class Game implements Serializable {
         this.finalScore = finalScore;
     }
     
-    public Map<Long, String> getResultSummaryMap() {
-        return resultSummaryMap;
-    }
+    // public Map<Long, String> getResultSummaryMap() {
+    //     return resultSummaryMap;
+    // }
     
-    public void setResultSummaryMap(Map<Long, String> resultSummaryMap) {
-        this.resultSummaryMap = resultSummaryMap;
-    }
+    // public void setResultSummaryMap(Map<Long, String> resultSummaryMap) {
+    //     this.resultSummaryMap = resultSummaryMap;
+    // }
     
-    public Map<Long, Integer> getTotalQuestionsMap() {
-        return totalQuestionsMap;
-    }
+    // public Map<Long, Integer> getTotalQuestionsMap() {
+    //     return totalQuestionsMap;
+    // }
     
-    public void setTotalQuestionsMap(Map<Long, Integer> totalQuestionsMap) {
-        this.totalQuestionsMap = totalQuestionsMap;
-    }
+    // public void setTotalQuestionsMap(Map<Long, Integer> totalQuestionsMap) {
+    //     this.totalQuestionsMap = totalQuestionsMap;
+    // }
     
     // public Map<Long, Integer> getCorrectAnswersMap() {
     //     return correctAnswersMap;

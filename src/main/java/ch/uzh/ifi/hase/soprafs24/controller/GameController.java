@@ -25,6 +25,7 @@ import ch.uzh.ifi.hase.soprafs24.service.GameService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -136,7 +137,7 @@ public class GameController {
     //     gamePostDTO.getTotalQuestionsMap()
     //     );
     // }
-
+    
     @PutMapping("/game/{gameId}/end")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void playerForfiet(@PathVariable Long gameId, @RequestBody PlayerSimpleDTO playerDTO) {
@@ -177,11 +178,11 @@ public class GameController {
     @RequestBody HintPostDTO hintPostDTO
     ) {
         return gameService.getHint( gameId,
-                                    hintPostDTO.getPlayerId(),
-                                    hintPostDTO.getToken(),
-                                    hintId,
-                                    questionId
-                                    );
+        hintPostDTO.getPlayerId(),
+        hintPostDTO.getToken(),
+        hintId,
+        questionId
+        );
     }
     
     
@@ -193,13 +194,13 @@ public class GameController {
     @PathVariable Long gameId,
     @RequestBody PlayerAnswerDTO playerAnswerDTO){
         return gameService.processingAnswer(gameId,
-                                            questionId,
-                                            playerAnswerDTO.getPlayerId(),
-                                            playerAnswerDTO.getToken(),
-                                            playerAnswerDTO.getAnswer());
+        questionId,
+        playerAnswerDTO.getPlayerId(),
+        playerAnswerDTO.getToken(),
+        playerAnswerDTO.getAnswer());
     }
     
-
+    
     @PostMapping("/game/{gameId}/{questionId}/skip")
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
@@ -207,6 +208,13 @@ public class GameController {
     @PathVariable Long gameId,
     @RequestBody PlayerSimpleDTO playerDTO){
         gameService.skipQuestion(gameId, playerDTO.getPlayerId(), playerDTO.getToken());
+    }
+    
+    @GetMapping("/game/{gameId}/result")
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public Object getGameResult(@PathVariable Long gameId) {
+        return gameService.gameResult(gameId);
     }
     
     // @PutMapping("/giveup/{userId}")
