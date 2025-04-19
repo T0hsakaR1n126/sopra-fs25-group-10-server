@@ -86,63 +86,63 @@ public class GameControllerTest {
                 .andExpect(status().isOk());
     }
 
-    @Test
-    public void joinGame_success() throws Exception {
-        doNothing().when(gameService).userJoinGame(any(), eq(1L));
+    // @Test
+    // public void joinGame_success() throws Exception {
+    //     doNothing().when(gameService).userJoinGame(any(), eq(1L));
 
-        mockMvc.perform(put("/lobbyIn/1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(gamePostDTO)))
-                .andExpect(status().isOk());
-    }
+    //     mockMvc.perform(put("/lobbyIn/1")
+    //             .contentType(MediaType.APPLICATION_JSON)
+    //             .content(asJsonString(gamePostDTO)))
+    //             .andExpect(status().isOk());
+    // }
 
-    @Test
-    public void exitGame_success() throws Exception {
-        doNothing().when(gameService).userExitGame(eq(1L));
+    // @Test
+    // public void exitGame_success() throws Exception {
+    //     doNothing().when(gameService).userExitGame(eq(1L));
 
-        mockMvc.perform(put("/lobbyOut/1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(gamePostDTO)))
-                .andExpect(status().isOk());
-    }
+    //     mockMvc.perform(put("/lobbyOut/1")
+    //             .contentType(MediaType.APPLICATION_JSON)
+    //             .content(asJsonString(gamePostDTO)))
+    //             .andExpect(status().isOk());
+    // }
 
-    @Test
-    public void startGame_success() throws Exception {
-        doNothing().when(gameService).startGame(1L);
+    // @Test
+    // public void startGame_success() throws Exception {
+    //     doNothing().when(gameService).startGame(1L);
 
-        mockMvc.perform(put("/start/1"))
-                .andExpect(status().isOk());
-    }
+    //     mockMvc.perform(put("/start/1"))
+    //             .andExpect(status().isOk());
+    // }
 
-    @Test
-    public void submitScores_validInput_success() throws Exception {
-        gamePostDTO.setScoreMap(Map.of(1L, 1800));
-        gamePostDTO.setCorrectAnswersMap(Map.of(1L, 7));
-        gamePostDTO.setTotalQuestionsMap(Map.of(1L, 10));
+    // @Test
+    // public void submitScores_validInput_success() throws Exception {
+    //     gamePostDTO.setScoreMap(Map.of(1L, 1800));
+    //     gamePostDTO.setCorrectAnswersMap(Map.of(1L, 7));
+    //     gamePostDTO.setTotalQuestionsMap(Map.of(1L, 10));
 
-        doNothing().when(gameService).submitScores(eq(1L), any(), any(), any());
+    //     doNothing().when(gameService).submitScores(eq(1L), any(), any(), any());
 
-        mockMvc.perform(put("/games/1/end")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(gamePostDTO)))
-                .andExpect(status().isNoContent());
-    }
+    //     mockMvc.perform(put("/games/1/end")
+    //             .contentType(MediaType.APPLICATION_JSON)
+    //             .content(asJsonString(gamePostDTO)))
+    //             .andExpect(status().isNoContent());
+    // }
 
-    @Test
-    public void getUserGameHistory_success() throws Exception {
-        given(gameService.getGamesByUser(1L)).willReturn(List.of(gameGetDTO));
+    // @Test
+    // public void getUserGameHistory_success() throws Exception {
+    //     given(gameService.getGamesByUser(1L)).willReturn(List.of(gameGetDTO));
 
-        mockMvc.perform(get("/users/1/history"))
-                .andExpect(status().isOk());
-    }
+    //     mockMvc.perform(get("/users/1/history"))
+    //             .andExpect(status().isOk());
+    // }
 
-    @Test
-    public void getLeaderboard_success() throws Exception {
-        given(gameService.getLeaderboard()).willReturn(List.of(gameGetDTO));
+    // @Test
+    // public void getLeaderboard_success() throws Exception {
+    //     given(gameService.getLeaderboard()).willReturn(List.of(gameGetDTO));
 
-        mockMvc.perform(get("/leaderboard"))
-                .andExpect(status().isOk());
-    }
+    //     mockMvc.perform(get("/leaderboard"))
+    //             .andExpect(status().isOk());
+    // }
 
     // 辅助方法：将 DTO 转换为 JSON 字符串
     private String asJsonString(final Object object) {

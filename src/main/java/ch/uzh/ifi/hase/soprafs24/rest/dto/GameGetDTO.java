@@ -1,7 +1,12 @@
 package ch.uzh.ifi.hase.soprafs24.rest.dto;
 
 import java.util.Map;
+
+import ch.uzh.ifi.hase.soprafs24.constant.GameAccessType;
+import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
+
 import java.util.List;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class GameGetDTO {
@@ -10,25 +15,29 @@ public class GameGetDTO {
 
     private Long ownerId;
 
-    private Long userId;
+    // private Long userId;
 
-    private String username;
+    // private String username;
 
     private Integer totalScore;
 
+    private LocalDateTime startTime;
+
     private Long gameId;
 
-    private Map<Long, String> scoreBoard;
+    private GameStatus gameStatus;
+
+    // private Map<Long, Integer> scoreBoard;
 
     private String gameName;
 
-    private int time;
+    private Integer time;
 
-    private String lockType;
+    private GameAccessType accessType;
 
-    private int playersNumber;
+    private Integer maxPlayersNumber;
 
-    private int realPlayersNumber;
+    private Integer currentPlayersNumber;
 
     private String password;
 
@@ -36,15 +45,45 @@ public class GameGetDTO {
 
     private LocalDateTime endTime;
 
-    private Integer finalScore;
+    // private Integer finalScore;
+
+    private Integer maxHints;
+
+    private LocalDateTime gameCreationDate;
 
     private String resultSummary;
 
-    private Integer totalQuestions;
+    // private Integer totalQuestions;
 
-    private Integer correctAnswers;
+    // private Integer correctAnswers;
 
-    private List<Map<String, Object>> hints;
+    // private List<Map<String, Object>> hints;
+
+    private LocalDateTime starTime;
+
+    public GameStatus getGameStatus() {
+        return gameStatus;
+    }
+
+    public void setGameStatus(GameStatus gameStatus) {
+        this.gameStatus = gameStatus;
+    }
+    
+    public LocalDateTime getStarTime() {
+        return starTime;
+    }
+
+    public void setStarTime(LocalDateTime starTime) {
+        this.starTime = starTime;
+    }
+
+    public LocalDateTime getGameCreationDate() {
+        return gameCreationDate;
+    }
+
+    public void setGameCreationDate(LocalDateTime gameCreationDate) {
+        this.gameCreationDate = gameCreationDate;
+    }
 
     public Long getGameId() {
         return gameId;
@@ -76,53 +115,45 @@ public class GameGetDTO {
 
     public void setOwnerName(String ownerName) {
         this.ownerName = ownerName;
+    }   
+    
+    public GameAccessType getAccessType() {
+        return accessType;
+    }
+    
+    public void setAccessType(GameAccessType accessType) {
+        this.accessType = accessType;
     }
 
-    public int getPlayersNumber() {
-        return playersNumber;
+    public Integer getMaxPlayersNumber() {
+        return maxPlayersNumber;
     }
     
-    public void setPlayersNumber(int playersNumber) {
-        this.playersNumber = playersNumber;
-    }     
-    
-    public String getLockType() {
-        return lockType;
-    }
-    
-    public void setLockType(String lockType) {
-        this.lockType = lockType;
-    }
-
-    public int getPlayerNumbers() {
-        return playersNumber;
-    }
-    
-    public void setPlayerNumbers(int playersNumber) {
-        this.playersNumber = playersNumber;
+    public void setMaxPlayersNumber(Integer maxPlayersNumber) {
+        this.maxPlayersNumber = maxPlayersNumber;
     }     
 
-      public int getRealPlayersNumber() {
-        return realPlayersNumber;
+      public Integer getCurrentPlayersNumber() {
+        return currentPlayersNumber;
     }
     
-    public void setRealPlayersNumber(int realPlayersNumber) {
-        this.realPlayersNumber = realPlayersNumber;
+    public void setCurrentPlayersNumber(Integer currentPlayersNumber) {
+        this.currentPlayersNumber = currentPlayersNumber;
     }   
 
-    public Map<Long, String> getScoreBoard() {
-        return scoreBoard;
-    }
+    // public Map<Long, Integer> getScoreBoard() {
+    //     return scoreBoard;
+    // }
 
-    public void setScoreBoard(Map<Long, String> scoreBoard) {
-        this.scoreBoard = scoreBoard;
-    }
+    // public void setScoreBoard(Map<Long, Integer> scoreBoard) {
+    //     this.scoreBoard = scoreBoard;
+    // }
 
-    public int getTime() {
+    public Integer getTime() {
         return time;
     }
     
-    public void setTime(int time) {
+    public void setTime(Integer time) {
         this.time = time;
     }
 
@@ -150,13 +181,13 @@ public class GameGetDTO {
         this.endTime = endTime;
     }
     
-    public Integer getFinalScore() {
-        return finalScore;
-    }
+    // public Integer getFinalScore() {
+    //     return finalScore;
+    // }
     
-    public void setFinalScore(Integer finalScore) {
-        this.finalScore = finalScore;
-    }
+    // public void setFinalScore(Integer finalScore) {
+    //     this.finalScore = finalScore;
+    // }
     
     public String getResultSummary() {
         return resultSummary;
@@ -166,37 +197,37 @@ public class GameGetDTO {
         this.resultSummary = resultSummary;
     }
     
-    public Integer getTotalQuestions() {
-        return totalQuestions;
-    }
+    // public Integer getTotalQuestions() {
+    //     return totalQuestions;
+    // }
     
-    public void setTotalQuestions(Integer totalQuestions) {
-        this.totalQuestions = totalQuestions;
-    }
+    // public void setTotalQuestions(Integer totalQuestions) {
+    //     this.totalQuestions = totalQuestions;
+    // }
     
-    public Integer getCorrectAnswers() {
-        return correctAnswers;
-    }
+    // public Integer getCorrectAnswers() {
+    //     return correctAnswers;
+    // }
     
-    public void setCorrectAnswers(Integer correctAnswers) {
-        this.correctAnswers = correctAnswers;
-    }
+    // public void setCorrectAnswers(Integer correctAnswers) {
+    //     this.correctAnswers = correctAnswers;
+    // }
 
-    public Long getUserId() {
-        return userId;
-    }
+    // public Long getUserId() {
+    //     return userId;
+    // }
     
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
+    // public void setUserId(Long userId) {
+    //     this.userId = userId;
+    // }
     
-    public String getUsername() {
-        return username;
-    }
+    // public String getUsername() {
+    //     return username;
+    // }
     
-    public void setUsername(String username) {
-        this.username = username;
-    }
+    // public void setUsername(String username) {
+    //     this.username = username;
+    // }
     
     public Integer getTotalScore() {
         return totalScore;
@@ -206,12 +237,28 @@ public class GameGetDTO {
         this.totalScore = totalScore;
     }
       
-    public void setHints(List<Map<String, Object>> hints){
-        this.hints = hints;
-    }
+    // public void setHints(List<Map<String, Object>> hints){
+    //     this.hints = hints;
+    // }
   
-    public List<Map<String, Object>> getHints(){
-        return hints;
+    // public List<Map<String, Object>> getHints(){
+    //     return hints;
+    // }
+
+    public Integer getMaxHints() {
+        return maxHints;
+    }
+
+    public void setMaxHints(Integer maxHints) {
+        this.maxHints = maxHints;
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
     }
 }
 

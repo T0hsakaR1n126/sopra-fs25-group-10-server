@@ -24,7 +24,7 @@ public class Application {
     @GetMapping("/")
     @ResponseStatus(HttpStatus.FOUND) // 302 Redirect
     public void redirectToSwagger(HttpServletResponse response) throws IOException {
-        response.sendRedirect("/swagger-ui/index.html"); // or "/swagger-ui.html" depending on your setup
+        response.sendRedirect("/swagger-ui.html?url=/v3/api-docs\r\n"); // or "/swagger-ui.html" depending on your setup
     }
     
     @Bean
