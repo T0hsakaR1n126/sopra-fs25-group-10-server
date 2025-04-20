@@ -170,7 +170,7 @@ public class GameController {
     //     return gameService.getLeaderboard();
     // }
     
-    @GetMapping("/game/{gameId}/{questionId}/hint/{hintId}")
+    @PostMapping("/game/{gameId}/{questionId}/hint/{hintId}")
     public HintGetDTO getHintForPlayer(
     @PathVariable Long gameId,
     @PathVariable Long questionId,

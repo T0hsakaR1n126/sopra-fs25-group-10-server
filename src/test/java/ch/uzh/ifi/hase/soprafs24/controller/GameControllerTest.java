@@ -1,9 +1,24 @@
 package ch.uzh.ifi.hase.soprafs24.controller;
 
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
+import ch.uzh.ifi.hase.soprafs24.entity.Player;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.GameStartDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GamePostDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.LobbyJoinPostDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerAuthDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerSimpleDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerResultDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerAnswerDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.HintGetDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.HintPostDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.GameCreateResponseDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.TeamVsTeamResultDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.OneVsOneResultDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.SoloResultDTO;
 import ch.uzh.ifi.hase.soprafs24.service.GameService;
+import ch.uzh.ifi.hase.soprafs24.constant.Country;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -60,14 +75,28 @@ public class GameControllerTest {
 
     @Test
     public void createGame_validInput_success() throws Exception {
-        given(gameService.createGame(any())).willReturn(game);
+        GameGetDTO gameGetDTO = new GameGetDTO();
+        gameGetDTO.setGameId(1L);
+
+        PlayerAuthDTO playerAuthDTO = new PlayerAuthDTO();
+        playerAuthDTO.setPlayerId(100L);
+        playerAuthDTO.setToken("mock-token");
+
+        GameCreateResponseDTO responseDTO = new GameCreateResponseDTO();
+        responseDTO.setGame(gameGetDTO);
+        responseDTO.setPlayer(playerAuthDTO);
+
+        given(gameService.createGame(any())).willReturn(responseDTO);
 
         MockHttpServletRequestBuilder request = post("/games")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(gamePostDTO));
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(asJsonString(gamePostDTO));
 
         mockMvc.perform(request)
-                .andExpect(status().isCreated());
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.game.gameId").value(1))
+            .andExpect(jsonPath("$.player.playerId").value(100))
+            .andExpect(jsonPath("$.player.token").value("mock-token"));
     }
 
     @Test
@@ -83,6 +112,164 @@ public class GameControllerTest {
         given(gameService.getGameByGameId(1L)).willReturn(game);
 
         mockMvc.perform(get("/game/1"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void joinGame_validRequest_success() throws Exception {
+        LobbyJoinPostDTO joinDTO = new LobbyJoinPostDTO();
+        joinDTO.setUserId(1L);
+        joinDTO.setPassword("pass");
+    
+        Player mockPlayer = new Player();
+        mockPlayer.setPlayerId(1L);
+        mockPlayer.setToken("token");
+    
+        given(gameService.userJoinGame(eq(1L), eq(1L), eq("pass"))).willReturn(mockPlayer);
+    
+        mockMvc.perform(post("/lobby/1/join")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(joinDTO)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.playerId").value(1))
+            .andExpect(jsonPath("$.token").value("token"));
+    }
+
+    
+    @Test
+    public void exitGame_validRequest_success() throws Exception {
+        mockMvc.perform(put("/lobbyOut/1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    public void startGame_validRequest_success() throws Exception {
+        GameStartDTO startDTO = new GameStartDTO();
+        startDTO.setPlayerId(1L);
+        startDTO.setToken("token");
+
+        mockMvc.perform(put("/start/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(startDTO)))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    public void playerForfeit_validRequest_success() throws Exception {
+        PlayerSimpleDTO dto = new PlayerSimpleDTO();
+        dto.setPlayerId(1L);
+        dto.setToken("token");
+
+        mockMvc.perform(put("/game/1/end")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(dto)))
+            .andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void getScoreboard_validRequest_success() throws Exception {
+        given(gameService.getScoreBoard(1L)).willReturn(List.of(new PlayerDTO()));
+
+        mockMvc.perform(get("/game/1/scoreBoard"))
+            .andExpect(status().isOk());
+    }  
+
+    @Test
+    public void getHint_validRequest_success() throws Exception {
+        HintPostDTO dto = new HintPostDTO();
+        dto.setPlayerId(1L);
+        dto.setToken("token");
+
+        given(gameService.getHint(eq(1L), eq(1L), eq("token"), eq(1), eq(1L)))
+            .willReturn(new HintGetDTO());
+
+        mockMvc.perform(post("/game/1/1/hint/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(dto)))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    public void answerProcessing_validRequest_success() throws Exception {
+        PlayerAnswerDTO dto = new PlayerAnswerDTO();
+        dto.setPlayerId(1L);
+        dto.setToken("token");
+        dto.setAnswer(Country.Germany);
+
+        given(gameService.processingAnswer(eq(1L), eq(1L), eq(1L), eq("token"), eq(Country.Germany)))
+            .willReturn(new PlayerResultDTO());
+
+        mockMvc.perform(post("/game/1/1/answer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(dto)))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    public void skipQuestion_validRequest_success() throws Exception {
+        PlayerSimpleDTO dto = new PlayerSimpleDTO();
+        dto.setPlayerId(1L);
+        dto.setToken("token");
+
+        mockMvc.perform(post("/game/1/1/skip")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(dto)))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    public void getGameResult_soloMode_success() throws Exception {
+        SoloResultDTO resultDTO = new SoloResultDTO();
+
+        PlayerDTO player = new PlayerDTO();
+        player.setPlayerId(1L);
+        resultDTO.setPlayer(player);
+        resultDTO.setScoreboard(List.of(player));
+
+        given(gameService.gameResult(1L)).willReturn(resultDTO);
+
+        mockMvc.perform(get("/game/1/result")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void getGameResult_oneVsOne_success() throws Exception {
+        OneVsOneResultDTO resultDTO = new OneVsOneResultDTO();
+
+        PlayerDTO winner = new PlayerDTO();
+        winner.setPlayerId(1L);
+
+        PlayerDTO loser = new PlayerDTO();
+        loser.setPlayerId(2L);
+
+        resultDTO.setWinner(winner);
+        resultDTO.setLoser(loser);
+        resultDTO.setScoreboard(List.of(winner, loser));
+        resultDTO.setDraw(false);
+
+        given(gameService.gameResult(1L)).willReturn(resultDTO);
+
+        mockMvc.perform(get("/game/1/result")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void getGameResult_teamVsTeam_success() throws Exception {
+        TeamVsTeamResultDTO resultDTO = new TeamVsTeamResultDTO();
+
+        resultDTO.setWinner("Team A");
+        resultDTO.setLoser("Team B");
+        resultDTO.setTeam1Score(150);
+        resultDTO.setTeam2Score(120);
+        resultDTO.setScoreboard(List.of(new PlayerDTO(), new PlayerDTO()));
+        resultDTO.setDraw(false);
+
+        given(gameService.gameResult(1L)).willReturn(resultDTO);
+
+        mockMvc.perform(get("/game/1/result")
+                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
 
@@ -144,7 +331,7 @@ public class GameControllerTest {
     //             .andExpect(status().isOk());
     // }
 
-    // 辅助方法：将 DTO 转换为 JSON 字符串
+    // turn DTO to json
     private String asJsonString(final Object object) {
         try {
             return new ObjectMapper().writeValueAsString(object);
