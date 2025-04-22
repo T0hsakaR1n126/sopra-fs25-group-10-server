@@ -2,12 +2,19 @@ package ch.uzh.ifi.hase.soprafs24.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.*;
+
+import javax.transaction.Transactional;
+
 import ch.uzh.ifi.hase.soprafs24.constant.Country;
 
+
+@SpringBootTest
+@Transactional
 public class UtilServiceTest {
 
     private UtilService utilService;
