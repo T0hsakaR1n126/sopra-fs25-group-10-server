@@ -58,10 +58,10 @@ public class UtilServiceTest {
             clues.forEach(c -> System.out.println("[" + c.get("difficulty") + "] " + c.get("text")));
         } catch (RuntimeException e) {
             String msg = e.getMessage();
-            if (msg != null && msg.contains("quota") || msg.contains("RESOURCE_EXHAUSTED")) {
+            if (msg != null && (msg.contains("quota") || msg.contains("RESOURCE_EXHAUSTED"))) {
                 System.out.println("⚠️ Skipping test due to quota exceeded: " + msg);
-                return; // treat as passed
-            } else {
+                return; // gracefully pass
+            }else {
                 throw e; // real error, fail test
             }
         }
