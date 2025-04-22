@@ -170,19 +170,15 @@ public class GameController {
     //     return gameService.getLeaderboard();
     // }
     
-    @PostMapping("/game/{gameId}/{questionId}/hint/{hintId}")
+    @GetMapping("/game/{gameId}/{questionId}/hint/{hintId}")
     public HintGetDTO getHintForPlayer(
-    @PathVariable Long gameId,
-    @PathVariable Long questionId,
-    @PathVariable Integer hintId,
-    @RequestBody HintPostDTO hintPostDTO
+        @PathVariable Long gameId,
+        @PathVariable Long questionId,
+        @PathVariable Integer hintId,
+        @RequestParam Long playerId,
+        @RequestParam String token
     ) {
-        return gameService.getHint( gameId,
-        hintPostDTO.getPlayerId(),
-        hintPostDTO.getToken(),
-        hintId,
-        questionId
-        );
+        return gameService.getHint(gameId, playerId, token, hintId, questionId);
     }
     
     

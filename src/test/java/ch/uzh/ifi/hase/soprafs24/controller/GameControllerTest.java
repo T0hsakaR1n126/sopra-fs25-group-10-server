@@ -182,17 +182,17 @@ public class GameControllerTest {
 
     @Test
     public void getHint_validRequest_success() throws Exception {
-        HintPostDTO dto = new HintPostDTO();
-        dto.setPlayerId(1L);
-        dto.setToken("token");
-
+        HintGetDTO hintDto = new HintGetDTO();
+        hintDto.setHintText("Some Hint"); //lets mock the response here
+    
         given(gameService.getHint(eq(1L), eq(1L), eq("token"), eq(1), eq(1L)))
-            .willReturn(new HintGetDTO());
-
-        mockMvc.perform(post("/game/1/1/hint/1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(dto)))
-            .andExpect(status().isOk());
+            .willReturn(hintDto);
+    
+        mockMvc.perform(get("/game/1/1/hint/1")
+                .param("playerId", "1")
+                .param("token", "token"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.hintText").value("Some Hint"));
     }
 
     @Test
