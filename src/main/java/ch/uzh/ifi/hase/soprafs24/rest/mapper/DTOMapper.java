@@ -69,7 +69,7 @@ public interface DTOMapper {
     @Mapping(source = "currentPlayersNumber", target = "currentPlayersNumber")
     @Mapping(source = "password", target = "password")
     @Mapping(source = "gameId", target = "gameId")
-    @Mapping(source = "startTime", target = "starTime")
+    @Mapping(source = "startTime", target = "startTime")
     @Mapping(source = "gameStatus", target = "gameStatus")
     @Mapping(source = "modeType", target = "modeType")
     @Mapping(source = "accessType", target = "accessType")

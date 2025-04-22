@@ -71,11 +71,11 @@ public class Game implements Serializable {
     @Column(name = "countryName")
     private Map<Long, String> answersMap = new HashMap<>(); // questionId -> answerText
 
-    // @ElementCollection
-    // @CollectionTable(name = "scoreBoard", joinColumns = @JoinColumn(name = "gameId"))
-    // @MapKeyColumn(name = "playerId")
-    // @Column(name = "playerScore")
-    // private Map<Long, Integer> scoreBoard = new HashMap<>();
+/*     @ElementCollection
+    @CollectionTable(name = "scoreBoard", joinColumns = @JoinColumn(name = "gameId"))
+    @MapKeyColumn(name = "playerId")
+    @Column(name = "playerScore")
+    private Map<Long, Integer> scoreBoard = new HashMap<>(); */
     
     public Map<Long, String> getAnswersMap() {
         return answersMap;
@@ -237,14 +237,13 @@ public class Game implements Serializable {
         player.setGame(null);
     }
     
-    // //get scoreBoard
-    // public Map<Long, Integer> getScoreBoard() {
-    //     return scoreBoard;
-    // }
+/*     public Map<Long, Integer> getScoreBoard() {
+        return scoreBoard;
+    }
     
-    // public void setScoreBoard(Map<Long, Integer> scoreBoard) {
-    //     this.scoreBoard = scoreBoard;
-    // }
+    public void setScoreBoard(Map<Long, Integer> scoreBoard) {
+        this.scoreBoard = scoreBoard;
+    } */
     
     // // update scoreBoard
     // public void updateScore(Long userId, Integer score) {

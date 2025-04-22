@@ -26,6 +26,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -43,6 +45,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.isNull;
 
 @WebMvcTest(GameController.class)
 public class GameControllerTest {
@@ -273,6 +279,124 @@ public class GameControllerTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    public void getGameReady_gameNotFound_shouldReturn404() throws Exception {
+        given(gameService.getGameByGameId(99L))
+            .willReturn(null);
+    
+        mockMvc.perform(get("/game/99"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void startGame_invalidToken_shouldReturn403() throws Exception {
+        GameStartDTO startDTO = new GameStartDTO();
+        startDTO.setPlayerId(1L);
+        startDTO.setToken("invalid");
+    
+        doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid token"))
+            .when(gameService).startGame(eq(1L), any(GameStartDTO.class));
+    
+        mockMvc.perform(put("/start/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(startDTO)))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void joinGame_wrongPassword_shouldReturn401() throws Exception {
+        LobbyJoinPostDTO joinDTO = new LobbyJoinPostDTO();
+        joinDTO.setUserId(1L);
+        joinDTO.setPassword("wrong");
+    
+        doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Wrong password"))
+            .when(gameService).userJoinGame(eq(1L), eq(1L), eq("wrong"));
+    
+        mockMvc.perform(post("/lobby/1/join")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(joinDTO)))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void getHint_invalidRequest_shouldReturn403() throws Exception {
+        HintPostDTO dto = new HintPostDTO();
+        dto.setPlayerId(1L);
+        dto.setToken("invalid");
+    
+        doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid hint order"))
+            .when(gameService).getHint(eq(1L), eq(1L), eq("invalid"), eq(3), eq(1L));
+    
+        mockMvc.perform(post("/game/1/1/hint/3")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(dto)))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void answerProcessing_invalidCountry_shouldReturn400() throws Exception {
+        PlayerAnswerDTO dto = new PlayerAnswerDTO();
+        dto.setPlayerId(1L);
+        dto.setToken("token");
+        dto.setAnswer(null); // 模拟未传入合法国家
+    
+        doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid country"))
+            .when(gameService).processingAnswer(eq(1L), eq(1L), eq(1L), eq("token"), isNull());
+    
+        mockMvc.perform(post("/game/1/1/answer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(dto)))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void exitGame_invalidPlayerId_shouldReturn404() throws Exception {
+        doThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"))
+            .when(gameService).playerExitGame(999L);
+    
+        mockMvc.perform(put("/lobbyOut/999"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void playerForfeit_invalidToken_shouldReturn403() throws Exception {
+        PlayerSimpleDTO dto = new PlayerSimpleDTO();
+        dto.setPlayerId(1L);
+        dto.setToken("invalid");
+    
+        doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid token"))
+            .when(gameService).playerForfiet(eq(1L), eq(1L), eq("invalid"));
+    
+        mockMvc.perform(put("/game/1/end")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(dto)))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void getScoreboard_gameNotFound_shouldReturn404() throws Exception {
+        doThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"))
+            .when(gameService).getScoreBoard(404L);
+    
+        mockMvc.perform(get("/game/404/scoreBoard"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void skipQuestion_invalidToken_shouldReturn403() throws Exception {
+        PlayerSimpleDTO dto = new PlayerSimpleDTO();
+        dto.setPlayerId(1L);
+        dto.setToken("wrong-token");
+    
+        doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid token"))
+            .when(gameService).skipQuestion(eq(1L), eq(1L), eq("wrong-token"));
+    
+        mockMvc.perform(post("/game/1/1/skip")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(dto)))
+            .andExpect(status().isForbidden());
+    }
+    
     // @Test
     // public void joinGame_success() throws Exception {
     //     doNothing().when(gameService).userJoinGame(any(), eq(1L));
