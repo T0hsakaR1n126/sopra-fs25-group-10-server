@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PlayerAuthDTO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">sopra-fs25-group-10-server</a> &gt; <a href="index.source.html" class="el_package">ch.uzh.ifi.hase.soprafs24.rest.dto</a> &gt; <span class="el_source">PlayerAuthDTO.java</span></div><h1>PlayerAuthDTO.java</h1><pre class="source lang-java linenums">package ch.uzh.ifi.hase.soprafs24.rest.dto;
+
+import ch.uzh.ifi.hase.soprafs24.entity.Player;
+
+<span class="fc" id="L5">public class PlayerAuthDTO {</span>
+    private Long playerId;
+    private String playerName;
+    private Long teamId;
+    private String teamName;
+    private String gameId;
+    private Long userId;
+    private String token;
+
+    public String getToken() {
+<span class="fc" id="L15">        return token;</span>
+    }
+
+    public void setToken(String token) {
+<span class="fc" id="L19">        this.token = token;</span>
+<span class="fc" id="L20">    }</span>
+
+    public Long getUserId() {
+<span class="fc" id="L23">        return userId;</span>
+    }
+
+    public void setUserId(Long userId) {
+<span class="fc" id="L27">        this.userId = userId;</span>
+<span class="fc" id="L28">    }</span>
+
+    public String getGameId() {
+<span class="fc" id="L31">        return gameId;</span>
+    }
+
+    public void setGameId(String gameId) {
+<span class="nc" id="L35">        this.gameId = gameId;</span>
+<span class="nc" id="L36">    }</span>
+
+    public Long getPlayerId() {
+<span class="fc" id="L39">        return playerId;</span>
+    }
+
+    public void setPlayerId(Long playerId) {
+<span class="fc" id="L43">        this.playerId = playerId;</span>
+<span class="fc" id="L44">    }</span>
+
+    public String getPlayerName() {
+<span class="fc" id="L47">        return playerName;</span>
+    }
+
+    public void setPlayerName(String playerName) {
+<span class="fc" id="L51">        this.playerName = playerName;</span>
+<span class="fc" id="L52">    }</span>
+
+    public Long getTeamId() {
+<span class="fc" id="L55">        return teamId;</span>
+    }
+
+    public void setTeamId(Long teamId) {
+<span class="fc" id="L59">        this.teamId = teamId;</span>
+<span class="fc" id="L60">    }</span>
+
+    public String getTeamName() {
+<span class="fc" id="L63">        return teamName;</span>
+    }
+
+    public void setTeamName(String teamName) {
+<span class="fc" id="L67">        this.teamName = teamName;</span>
+<span class="fc" id="L68">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

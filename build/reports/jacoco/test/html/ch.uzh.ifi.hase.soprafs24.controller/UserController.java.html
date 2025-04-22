@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">sopra-fs25-group-10-server</a> &gt; <a href="index.source.html" class="el_package">ch.uzh.ifi.hase.soprafs24.controller</a> &gt; <span class="el_source">UserController.java</span></div><h1>UserController.java</h1><pre class="source lang-java linenums">package ch.uzh.ifi.hase.soprafs24.controller;
+
+import ch.uzh.ifi.hase.soprafs24.entity.User;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.UserLearningDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.UserPostDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.UserPasswordDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.UserProfileDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
+import ch.uzh.ifi.hase.soprafs24.service.GameService;
+import ch.uzh.ifi.hase.soprafs24.service.UserService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+* User Controller
+* This class is responsible for handling all REST request that are related to
+* the user.
+* The controller will receive the request and delegate the execution to the
+* UserService and finally return the result.
+*/
+@RestController
+public class UserController {
+
+    private final GameService gameService;
+    
+    private final UserService userService;
+    
+<span class="fc" id="L35">    UserController(UserService userService, GameService gameService) {</span>
+<span class="fc" id="L36">        this.userService = userService;</span>
+<span class="fc" id="L37">        this.gameService = gameService;</span>
+<span class="fc" id="L38">    }</span>
+    
+    
+    @GetMapping(&quot;/users&quot;)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public List&lt;UserGetDTO&gt; getAllUsers() {
+        // fetch all users in the internal representation
+<span class="fc" id="L46">        List&lt;User&gt; users = userService.getUsers();</span>
+<span class="fc" id="L47">        List&lt;UserGetDTO&gt; userGetDTOs = new ArrayList&lt;&gt;();</span>
+        
+        // convert each user to the API representation
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        for (User user : users) {</span>
+<span class="fc" id="L51">            userGetDTOs.add(DTOMapper.INSTANCE.convertEntityToUserGetDTO(user));</span>
+<span class="fc" id="L52">        }</span>
+<span class="fc" id="L53">        return userGetDTOs;</span>
+    }
+    
+    @PostMapping(&quot;/register&quot;)
+    @ResponseStatus(HttpStatus.CREATED)
+    @ResponseBody
+    public UserGetDTO createUser(@RequestBody UserPostDTO userPostDTO) {
+        // convert API user to internal representation
+<span class="fc" id="L61">        User userInput = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);</span>
+        
+        // create user
+<span class="fc" id="L64">        User createdUser = userService.createUser(userInput);</span>
+        // convert internal representation of user back to API
+<span class="fc" id="L66">        return DTOMapper.INSTANCE.convertEntityToUserGetDTO(createdUser);</span>
+        
+    }
+    
+    
+    @PutMapping(&quot;/users/pwd&quot;)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void changePassword(@RequestBody UserPasswordDTO userPasswordDTO) {
+        // verification
+<span class="fc" id="L75">        User userInput = new User();</span>
+<span class="fc" id="L76">        userInput.setToken(userPasswordDTO.getToken()); //why is this necessary?</span>
+<span class="fc" id="L77">        User authenticatedUser = userService.userAuthenticate(userInput);</span>
+        
+        // change password
+<span class="fc" id="L80">        userService.changePassword(authenticatedUser.getUserId(), userPasswordDTO.getCurrentPassword(), userPasswordDTO.getNewPassword());</span>
+<span class="fc" id="L81">    }</span>
+    
+    @PostMapping(&quot;/auth&quot;)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public UserGetDTO userAuthenticate(@RequestBody UserPostDTO userPostDTO) {
+<span class="fc" id="L87">        User userInput = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);</span>
+        
+<span class="fc" id="L89">        User userVerified = userService.userAuthenticate(userInput);</span>
+<span class="fc" id="L90">        return DTOMapper.INSTANCE.convertEntityToUserGetDTO(userVerified);</span>
+    }
+    
+    @PostMapping(&quot;/login&quot;)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public UserGetDTO login(@RequestBody UserPostDTO userPostDTO) {
+<span class="fc" id="L97">        User loginInput = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);</span>
+<span class="fc" id="L98">        User loggedInUser = userService.login(loginInput);</span>
+<span class="fc" id="L99">        return DTOMapper.INSTANCE.convertEntityToUserGetDTO(loggedInUser);</span>
+    }
+    
+    @PostMapping(&quot;/logout&quot;)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(@RequestBody UserPostDTO userPostDTO) {
+        // verification
+<span class="fc" id="L106">        User userInput = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);</span>
+<span class="fc" id="L107">        User authenticatedUser = userService.userAuthenticate(userInput);</span>
+        
+<span class="fc" id="L109">        userService.logout(authenticatedUser);</span>
+<span class="fc" id="L110">    }</span>
+    
+    @GetMapping(&quot;/users/{userId}&quot;)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public UserGetDTO getUserProfile(@PathVariable(&quot;userId&quot;) Long userId) {
+<span class="fc" id="L116">        User user = userService.findUserById(userId);</span>
+<span class="fc" id="L117">        return DTOMapper.INSTANCE.convertEntityToUserGetDTO(user);</span>
+    }
+    
+    @PutMapping(&quot;/users/{userId}&quot;)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public UserGetDTO updateUserProfile(@PathVariable(&quot;userId&quot;) Long userId,@RequestBody UserProfileDTO userProfileDTO) {
+<span class="fc" id="L124">        User updatedInfo = DTOMapper.INSTANCE.convertUserProfileDTOtoEntity(userProfileDTO);</span>
+<span class="fc" id="L125">        User updatedUser = userService.updateUserProfile(userId, updatedInfo);</span>
+<span class="fc" id="L126">        return DTOMapper.INSTANCE.convertEntityToUserGetDTO(updatedUser);</span>
+    }
+    
+    
+    @GetMapping(&quot;/users/{userId}/learning&quot;)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public UserLearningDTO getUserProgress(@PathVariable(&quot;userId&quot;) Long userId) {
+        // todo: add token verification
+<span class="nc" id="L135">        return userService.getUserLearning(userId);</span>
+    }
+
+    @GetMapping(&quot;/users/{userId}/history&quot;)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public List&lt;PlayerDTO&gt; getUserHistory(@PathVariable(&quot;userId&quot;) Long userId) {
+        // todo: add token verification
+<span class="nc" id="L143">        return gameService.getUserHistory(userId);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

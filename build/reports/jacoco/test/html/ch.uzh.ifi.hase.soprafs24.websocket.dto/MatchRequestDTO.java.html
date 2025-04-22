@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MatchRequestDTO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">sopra-fs25-group-10-server</a> &gt; <a href="index.source.html" class="el_package">ch.uzh.ifi.hase.soprafs24.websocket.dto</a> &gt; <span class="el_source">MatchRequestDTO.java</span></div><h1>MatchRequestDTO.java</h1><pre class="source lang-java linenums">package ch.uzh.ifi.hase.soprafs24.websocket.dto;
+
+import ch.uzh.ifi.hase.soprafs24.constant.GameMode;
+
+<span class="nc" id="L5">public class MatchRequestDTO {</span>
+
+    private String playerId; // The ID of the player making the request
+    private String teamId;   // The ID of the team (if relevant, for Team vs Team)
+    private GameMode mode;   // The game mode the player wants to play (e.g., 1v1 or Team vs Team)
+
+    // Getters and Setters
+    public String getPlayerId() {
+<span class="nc" id="L13">        return playerId;</span>
+    }
+
+    public void setPlayerId(String playerId) {
+<span class="nc" id="L17">        this.playerId = playerId;</span>
+<span class="nc" id="L18">    }</span>
+
+    public String getTeamId() {
+<span class="nc" id="L21">        return teamId;</span>
+    }
+
+    public void setTeamId(String teamId) {
+<span class="nc" id="L25">        this.teamId = teamId;</span>
+<span class="nc" id="L26">    }</span>
+
+    public GameMode getMode() {
+<span class="nc" id="L29">        return mode;</span>
+    }
+
+    public void setMode(GameMode mode) {
+<span class="nc" id="L33">        this.mode = mode;</span>
+<span class="nc" id="L34">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

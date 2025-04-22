@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Game.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">sopra-fs25-group-10-server</a> &gt; <a href="index.source.html" class="el_package">ch.uzh.ifi.hase.soprafs24.entity</a> &gt; <span class="el_source">Game.java</span></div><h1>Game.java</h1><pre class="source lang-java linenums">package ch.uzh.ifi.hase.soprafs24.entity;
+
+import javax.persistence.*;
+
+import ch.uzh.ifi.hase.soprafs24.constant.GameAccessType;
+import ch.uzh.ifi.hase.soprafs24.constant.GameMode;
+import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerDTO;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.time.LocalDateTime;
+
+/**
+* Internal User Representation
+* This class composes the internal representation of the user and defines how
+* the user is stored in the database.
+* Every variable will be mapped into a database field with the @Column
+* annotation
+* - nullable = false -&gt; this cannot be left empty
+* - unique = true -&gt; this value must be unqiue across the database -&gt; composes
+* the primary key
+*/
+@Entity
+@Table(name = &quot;GAME&quot;)
+<span class="fc" id="L33">public class Game implements Serializable {</span>
+    
+    private static final long serialVersionUID = 1L;
+    
+    @Id
+    @GeneratedValue
+    private Long gameId;
+    
+    @Column(nullable = false)
+    private String gameName;
+    
+    @Column(nullable = true)
+    private Long ownerId;
+    
+    @Column(nullable = true)
+    private Long userId;
+    
+<span class="fc" id="L50">    @OneToMany(mappedBy = &quot;game&quot;, cascade = CascadeType.ALL, orphanRemoval = true)</span>
+    private List&lt;Player&gt; players = new ArrayList&lt;&gt;();
+    
+<span class="fc" id="L53">    @OneToMany(mappedBy = &quot;game&quot;, cascade = CascadeType.ALL, orphanRemoval = true)</span>
+    private List&lt;Team&gt; teams = new ArrayList&lt;&gt;();
+    
+<span class="fc" id="L56">    @ElementCollection</span>
+    @CollectionTable(name = &quot;game_hints&quot;, joinColumns = @JoinColumn(name = &quot;gameId&quot;))
+    private List&lt;HintEntry&gt; hintEntries = new ArrayList&lt;&gt;();
+
+    public List&lt;HintEntry&gt; getHintEntries() {
+<span class="nc" id="L61">        return hintEntries;</span>
+    }
+
+    public void setHintEntries(List&lt;HintEntry&gt; hintsMap) {
+<span class="nc" id="L65">        this.hintEntries = hintsMap;</span>
+<span class="nc" id="L66">    }</span>
+
+<span class="fc" id="L68">    @ElementCollection</span>
+    @CollectionTable(name = &quot;game_answers&quot;, joinColumns = @JoinColumn(name = &quot;gameId&quot;))
+    @MapKeyColumn(name = &quot;questionId&quot;)
+    @Column(name = &quot;countryName&quot;)
+    private Map&lt;Long, String&gt; answersMap = new HashMap&lt;&gt;(); // questionId -&gt; answerText
+
+    // @ElementCollection
+    // @CollectionTable(name = &quot;scoreBoard&quot;, joinColumns = @JoinColumn(name = &quot;gameId&quot;))
+    // @MapKeyColumn(name = &quot;playerId&quot;)
+    // @Column(name = &quot;playerScore&quot;)
+    // private Map&lt;Long, Integer&gt; scoreBoard = new HashMap&lt;&gt;();
+    
+    public Map&lt;Long, String&gt; getAnswersMap() {
+<span class="nc" id="L81">        return answersMap;</span>
+    }
+
+    public void setAnswersMap(Map&lt;Long, String&gt; answersMap) {
+<span class="nc" id="L85">        this.answersMap = answersMap;</span>
+<span class="nc" id="L86">    }</span>
+
+    public List&lt;PlayerDTO&gt; getScoreBoard() {
+<span class="nc bnc" id="L89" title="All 4 branches missed.">        if (players == null || players.isEmpty()) return Collections.emptyList();</span>
+    
+<span class="nc" id="L91">        return players.stream()</span>
+<span class="nc" id="L92">            .sorted(Comparator.comparingInt(Player::getScore).reversed())</span>
+<span class="nc" id="L93">            .map(player -&gt; {</span>
+<span class="nc" id="L94">                PlayerDTO dto = new PlayerDTO();</span>
+<span class="nc" id="L95">                dto.setPlayerId(player.getPlayerId());</span>
+<span class="nc" id="L96">                dto.setPlayerName(player.getPlayerName());</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                dto.setTeamId(player.getTeam() != null ? player.getTeam().getTeamId() : null);</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                dto.setTeamName(player.getTeam() != null ? player.getTeam().getTeamName() : null);</span>
+<span class="nc" id="L99">                dto.setGameId(this.getGameId()); </span>
+<span class="nc" id="L100">                dto.setGameStatus(player.getGame().getGameStatus());</span>
+<span class="nc" id="L101">                dto.setPlayerStatus(player.getPlayerStatus());</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">                dto.setUserId(player.getUser() != null ? player.getUser().getUserId() : null);</span>
+<span class="nc" id="L103">                dto.setScore(player.getScore());</span>
+    
+<span class="nc" id="L105">                return dto;</span>
+            })
+<span class="nc" id="L107">            .collect(Collectors.toList());</span>
+    }
+    
+    @Column(nullable = true)
+    private Integer maxHints;
+    
+    @Column(nullable = true)
+    private Integer maxPlayersNumber;
+    
+    @Column(nullable = false)
+    private GameStatus gameStatus;
+    
+    @Column(nullable = true)
+    private GameAccessType accessType;
+    
+    @Column(nullable = false)
+    private Integer currentPlayersNumber;
+    
+    @Column(nullable = false)
+    private Integer time;
+    
+    @Column(nullable = false)
+    private LocalDateTime gameCreationDate;
+    
+    @Column(nullable = false)
+    private GameMode modeType;
+    
+    @Column(nullable = true)
+    private String password;
+    
+    @Column(nullable = true)
+    private LocalDateTime startTime;
+    
+    @Column(nullable = true)
+    private LocalDateTime endTime;
+    
+    @Column(nullable = true)
+    private Integer finalScore;
+    
+    // @ElementCollection
+    // @CollectionTable(name = &quot;correct_answers&quot;, joinColumns = @JoinColumn(name = &quot;gameId&quot;))
+    // @MapKeyColumn(name = &quot;userId&quot;)
+    // @Column(name = &quot;correct&quot;)
+    // private Map&lt;Long, Integer&gt; correctAnswersMap = new HashMap&lt;&gt;();
+    
+    // @ElementCollection
+    // @CollectionTable(name = &quot;total_questions&quot;, joinColumns = @JoinColumn(name = &quot;gameId&quot;))
+    // @MapKeyColumn(name = &quot;userId&quot;)
+    // @Column(name = &quot;total&quot;)
+    // private Map&lt;Long, Integer&gt; totalQuestionsMap = new HashMap&lt;&gt;();
+    
+    // @ElementCollection
+    // @CollectionTable(name = &quot;result_summaries&quot;, joinColumns = @JoinColumn(name = &quot;gameId&quot;))
+    // @MapKeyColumn(name = &quot;userId&quot;)
+    // @Column(name = &quot;summary&quot;)
+    // private Map&lt;Long, String&gt; resultSummaryMap = new HashMap&lt;&gt;();
+    
+    public Long getGameId() {
+<span class="fc" id="L165">        return gameId;</span>
+    }
+    
+    public void setGameId(Long gameId) {
+<span class="fc" id="L169">        this.gameId = gameId;</span>
+<span class="fc" id="L170">    }</span>
+    
+    //addding user id for join purposes
+    public Long getUserId() {
+<span class="nc" id="L174">        return userId;</span>
+    }
+    
+    public void setUserId(Long userId) {
+<span class="fc" id="L178">        this.userId = userId;</span>
+<span class="fc" id="L179">    }</span>
+    
+    public GameAccessType getAccessType() {
+<span class="fc" id="L182">        return accessType;</span>
+    }
+    
+    public void setAccessType(GameAccessType accessType) {
+<span class="fc" id="L186">        this.accessType = accessType;</span>
+<span class="fc" id="L187">    }</span>
+    
+    public String getGameName() {
+<span class="fc" id="L190">        return gameName;</span>
+    }
+    
+    public void setGameName(String gameName) {
+<span class="fc" id="L194">        this.gameName = gameName;</span>
+<span class="fc" id="L195">    }</span>
+    
+    public Long getOwnerId() {
+<span class="fc" id="L198">        return ownerId;</span>
+    }
+    
+    public void setOwnerId(Long ownerId) {
+<span class="fc" id="L202">        this.ownerId = ownerId;</span>
+<span class="fc" id="L203">    }</span>
+    
+    public GameStatus getGameStatus() {
+<span class="fc" id="L206">        return gameStatus;</span>
+    }
+    
+    public void setGameStatus(GameStatus gameStatus) {
+<span class="nc" id="L210">        this.gameStatus = gameStatus;</span>
+<span class="nc" id="L211">    }</span>
+    
+    public List&lt;Player&gt; getPlayers() {
+<span class="nc" id="L214">        return players;</span>
+    }
+    
+    public void setPlayers(List&lt;Player&gt; players) {
+<span class="nc" id="L218">        this.players = players;</span>
+<span class="nc" id="L219">    }</span>
+    
+    public List&lt;Team&gt; getTeams() {
+<span class="nc" id="L222">        return teams;</span>
+    }
+    
+    public void setTeams(List&lt;Team&gt; teams) {
+<span class="nc" id="L226">        this.teams = teams;</span>
+<span class="nc" id="L227">    }</span>
+    
+    //add player
+    public void addPlayer(Player player) {
+<span class="nc" id="L231">        players.add(player);</span>
+<span class="nc" id="L232">        player.setGame(this); // set back-reference</span>
+<span class="nc" id="L233">    }</span>
+    //remove player
+    public void removePlayer(Player player) {
+<span class="nc" id="L236">        players.remove(player);</span>
+<span class="nc" id="L237">        player.setGame(null);</span>
+<span class="nc" id="L238">    }</span>
+    
+    // //get scoreBoard
+    // public Map&lt;Long, Integer&gt; getScoreBoard() {
+    //     return scoreBoard;
+    // }
+    
+    // public void setScoreBoard(Map&lt;Long, Integer&gt; scoreBoard) {
+    //     this.scoreBoard = scoreBoard;
+    // }
+    
+    // // update scoreBoard
+    // public void updateScore(Long userId, Integer score) {
+    //     scoreBoard.put(userId, score);
+    // }
+    
+    // // get specific user's score
+    // public Integer getScore(Long userId) {
+    //     return scoreBoard.get(userId);
+    // }
+    
+    // // remove specific user's score
+    // public Integer removeScore(Long userId) {
+    //     return scoreBoard.remove(userId);
+    // }
+    
+    public Integer getMaxHints() {
+<span class="fc" id="L265">        return maxHints;</span>
+    }
+    
+    public void setMaxHints(Integer maxHints) {
+<span class="nc" id="L269">        this.maxHints = maxHints;</span>
+<span class="nc" id="L270">    }</span>
+    
+    public Integer getMaxPlayersNumber() {
+<span class="fc" id="L273">        return maxPlayersNumber;</span>
+    }
+    
+    public void setMaxPlayersNumber(Integer maxPlayersNumber) {
+<span class="fc" id="L277">        this.maxPlayersNumber = maxPlayersNumber;</span>
+<span class="fc" id="L278">    }</span>
+    
+    public Integer getCurrentPlayersNumber() {
+<span class="fc" id="L281">        return currentPlayersNumber;</span>
+    }
+    
+    public void setCurrentPlayersNumber(Integer currentPlayersNumber) {
+<span class="nc" id="L285">        this.currentPlayersNumber = currentPlayersNumber;</span>
+<span class="nc" id="L286">    }</span>
+    
+    public Integer getTime() {
+<span class="fc" id="L289">        return time;</span>
+    }
+    
+    public void setTime(Integer time) {
+<span class="fc" id="L293">        this.time = time;</span>
+<span class="fc" id="L294">    }</span>
+    
+    public LocalDateTime getGameCreationDate() {
+<span class="fc" id="L297">        return gameCreationDate;</span>
+    }
+    
+    public void setGameCreationDate(LocalDateTime gameCreationDate) {
+<span class="nc" id="L301">        this.gameCreationDate = gameCreationDate;</span>
+<span class="nc" id="L302">    }</span>
+    
+    public GameMode getModeType() {
+<span class="fc" id="L305">        return modeType;</span>
+    }
+    
+    public void setModeType(GameMode modeType) {
+<span class="fc" id="L309">        this.modeType = modeType;</span>
+<span class="fc" id="L310">    }</span>
+    
+    public String getPassword() {
+<span class="fc" id="L313">        return password;</span>
+    }
+    
+    public void setPassword(String password) {
+<span class="fc" id="L317">        this.password = password;</span>
+<span class="fc" id="L318">    }</span>
+    
+    public LocalDateTime getEndTime() {
+<span class="fc" id="L321">        return endTime;</span>
+    }
+    
+    public void setEndTime(LocalDateTime endTime) {
+<span class="nc" id="L325">        this.endTime = endTime;</span>
+<span class="nc" id="L326">    }</span>
+    
+    public Integer getFinalScore() {
+<span class="nc" id="L329">        return finalScore;</span>
+    }
+    
+    public void setFinalScore(Integer finalScore) {
+<span class="nc" id="L333">        this.finalScore = finalScore;</span>
+<span class="nc" id="L334">    }</span>
+    
+    // public Map&lt;Long, String&gt; getResultSummaryMap() {
+    //     return resultSummaryMap;
+    // }
+    
+    // public void setResultSummaryMap(Map&lt;Long, String&gt; resultSummaryMap) {
+    //     this.resultSummaryMap = resultSummaryMap;
+    // }
+    
+    // public Map&lt;Long, Integer&gt; getTotalQuestionsMap() {
+    //     return totalQuestionsMap;
+    // }
+    
+    // public void setTotalQuestionsMap(Map&lt;Long, Integer&gt; totalQuestionsMap) {
+    //     this.totalQuestionsMap = totalQuestionsMap;
+    // }
+    
+    // public Map&lt;Long, Integer&gt; getCorrectAnswersMap() {
+    //     return correctAnswersMap;
+    // }
+    
+    // public void setCorrectAnswersMap(Map&lt;Long, Integer&gt; correctAnswersMap) {
+    //     this.correctAnswersMap = correctAnswersMap;
+    // }
+    
+    public LocalDateTime getStartTime() {
+<span class="fc" id="L361">        return startTime;</span>
+    }
+    
+    public void setStartTime(LocalDateTime startTime) {
+<span class="nc" id="L365">        this.startTime = startTime;</span>
+<span class="nc" id="L366">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">sopra-fs25-group-10-server</a> &gt; <a href="index.source.html" class="el_package">ch.uzh.ifi.hase.soprafs24.service</a> &gt; <span class="el_source">UserService.java</span></div><h1>UserService.java</h1><pre class="source lang-java linenums">package ch.uzh.ifi.hase.soprafs24.service;
+
+import ch.uzh.ifi.hase.soprafs24.constant.Country;
+import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
+import ch.uzh.ifi.hase.soprafs24.entity.CountryProgressEntry;
+import ch.uzh.ifi.hase.soprafs24.entity.User;
+import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.UserLearningDTO;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+/**
+* User Service
+* This class is the &quot;worker&quot; and responsible for all functionality related to
+* the user
+* (e.g., it creates, modifies, deletes, finds). The result will be passed back
+* to the caller.
+*/
+@Service
+@Transactional
+public class UserService {
+    
+<span class="fc" id="L35">    private final Logger log = LoggerFactory.getLogger(UserService.class);</span>
+    
+    private final UserRepository userRepository;
+    
+<span class="fc" id="L39">    private static final Set&lt;String&gt; VALID_AVATARS = Set.of(</span>
+    &quot;avatar1.png&quot;,
+    &quot;avatar2.png&quot;,
+    &quot;avatar3.png&quot;,
+    &quot;avatar4.png&quot;,
+    &quot;avatar5.png&quot;
+    );
+    
+    @Autowired
+<span class="fc" id="L48">    public UserService(@Qualifier(&quot;userRepository&quot;) UserRepository userRepository) {</span>
+<span class="fc" id="L49">        this.userRepository = userRepository;</span>
+<span class="fc" id="L50">    }</span>
+    
+    public List&lt;User&gt; getUsers() {
+<span class="nc" id="L53">        return this.userRepository.findAll();</span>
+    }
+    
+    public User createUser(User newUser) {
+<span class="fc" id="L57">        newUser.setToken(UUID.randomUUID().toString());</span>
+<span class="fc" id="L58">        newUser.setStatus(UserStatus.OFFLINE);</span>
+<span class="fc" id="L59">        checkIfUserExists(newUser);</span>
+        // saves the given entity but data is only persisted in the database once
+        // flush() is called
+<span class="fc" id="L62">        newUser = userRepository.save(newUser);</span>
+<span class="fc" id="L63">        userRepository.flush();</span>
+        
+<span class="fc" id="L65">        log.debug(&quot;Created Information for User: {}&quot;, newUser);</span>
+<span class="fc" id="L66">        return newUser;</span>
+    }
+    
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
+        // search user by ID
+<span class="fc" id="L71">        User user = userRepository.findById(userId)</span>
+<span class="fc" id="L72">        .orElseThrow(() -&gt; new ResponseStatusException(HttpStatus.NOT_FOUND, &quot;User not found&quot;));</span>
+        
+        // check if current password is correct
+<span class="fc bfc" id="L75" title="All 2 branches covered.">        if (!user.getPassword().equals(currentPassword)) {</span>
+<span class="fc" id="L76">            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, &quot;Incorrect current password&quot;);</span>
+        }
+        
+        // Check if new password is valid
+<span class="pc bpc" id="L80" title="1 of 4 branches missed.">        if (newPassword == null || newPassword.trim().isEmpty()) {</span>
+<span class="fc" id="L81">            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, &quot;New password must not be empty&quot;);</span>
+        }
+        
+        // update password
+<span class="fc" id="L85">        user.setPassword(newPassword);</span>
+<span class="fc" id="L86">        userRepository.save(user);</span>
+<span class="fc" id="L87">    }</span>
+    
+    public User login(User loginUser) {
+<span class="fc" id="L90">        User userInDB = userRepository.findByUsername(loginUser.getUsername());</span>
+<span class="pc bpc" id="L91" title="1 of 4 branches missed.">        if (userInDB == null || !userInDB.getPassword().equals(loginUser.getPassword())) {</span>
+<span class="fc" id="L92">            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, &quot;Invalid username or password&quot;);</span>
+        }
+        
+<span class="fc" id="L95">        userInDB.setStatus(UserStatus.ONLINE);</span>
+<span class="fc" id="L96">        userInDB.setToken(UUID.randomUUID().toString());</span>
+<span class="fc" id="L97">        userRepository.save(userInDB);</span>
+<span class="fc" id="L98">        return userInDB;</span>
+    }
+    
+    public void logout(User user) {
+<span class="fc" id="L102">        User userInDB = userRepository.findByToken(user.getToken());</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        if (userInDB == null) {</span>
+<span class="fc" id="L104">            throw new ResponseStatusException(HttpStatus.NOT_FOUND, &quot;User not found&quot;);</span>
+        }
+        
+<span class="fc" id="L107">        userInDB.setStatus(UserStatus.OFFLINE);</span>
+<span class="fc" id="L108">        userRepository.save(userInDB);</span>
+<span class="fc" id="L109">    }</span>
+    
+    public User findUserById(Long userId) {
+<span class="fc" id="L112">        return userRepository.findById(userId)</span>
+<span class="fc" id="L113">        .orElseThrow(() -&gt; new ResponseStatusException(HttpStatus.NOT_FOUND, &quot;User not found&quot;));</span>
+    }
+    
+    public User userAuthenticate(User authenticateUser) {
+<span class="fc" id="L117">        User userVerified = userRepository.findByToken(authenticateUser.getToken());</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        if (userVerified == null) {</span>
+<span class="fc" id="L119">            throw new ResponseStatusException(HttpStatus.NOT_FOUND, &quot;User Not Authenticated&quot;);</span>
+        }
+<span class="fc" id="L121">        return userVerified;</span>
+    }
+    
+    public User updateUserProfile(Long userId, User updatedInfo) {
+<span class="fc" id="L125">        User userInDB = userRepository.findById(userId)</span>
+<span class="fc" id="L126">        .orElseThrow(() -&gt; new ResponseStatusException(HttpStatus.NOT_FOUND, &quot;User not found&quot;));</span>
+        
+        // username empty check
+<span class="pc bpc" id="L129" title="1 of 4 branches missed.">        if (updatedInfo.getUsername() == null || updatedInfo.getUsername().trim().isEmpty()) {</span>
+<span class="fc" id="L130">            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, &quot;Username must not be empty&quot;);</span>
+        }
+        
+        // username duplication check
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">        if (!userInDB.getUsername().equals(updatedInfo.getUsername())</span>
+<span class="fc bfc" id="L135" title="All 2 branches covered.">        &amp;&amp; userRepository.findByUsername(updatedInfo.getUsername()) != null) {</span>
+<span class="fc" id="L136">            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, &quot;Username already exists&quot;);</span>
+        }
+        
+        // avatar check
+<span class="pc bpc" id="L140" title="1 of 4 branches missed.">        if (updatedInfo.getAvatar() != null &amp;&amp; !VALID_AVATARS.contains(updatedInfo.getAvatar())) {</span>
+<span class="fc" id="L141">            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, &quot;Invalid avatar selection&quot;);</span>
+        }
+        
+<span class="fc" id="L144">        userInDB.setUsername(updatedInfo.getUsername());</span>
+<span class="fc" id="L145">        userInDB.setAvatar(updatedInfo.getAvatar());</span>
+<span class="fc" id="L146">        userInDB.setEmail(updatedInfo.getEmail());</span>
+<span class="fc" id="L147">        userInDB.setBio(updatedInfo.getBio());</span>
+        
+<span class="fc" id="L149">        userRepository.save(userInDB);</span>
+<span class="fc" id="L150">        return userInDB;</span>
+    }
+    
+    /**
+    * This is a helper method that will check the uniqueness criteria of the
+    * username and the name
+    * defined in the User entity. The method will do nothing if the input is unique
+    * and throw an error otherwise.
+    *
+    * @param userToBeCreated
+    * @throws org.springframework.web.server.ResponseStatusException
+    * @see User
+    */
+    private void checkIfUserExists(User userToBeCreated) {
+<span class="fc" id="L164">        User userByUsername = userRepository.findByUsername(userToBeCreated.getUsername());</span>
+<span class="fc" id="L165">        User userByName = userRepository.findByName(userToBeCreated.getName());</span>
+        
+<span class="fc" id="L167">        String baseErrorMessage = &quot;The %s provided %s not unique. Therefore, the user could not be created!&quot;;</span>
+<span class="fc bfc" id="L168" title="All 4 branches covered.">        if (userByUsername != null &amp;&amp; userByName != null) {</span>
+<span class="fc" id="L169">            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,</span>
+<span class="fc" id="L170">            String.format(baseErrorMessage, &quot;username and the name&quot;, &quot;are&quot;));</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        } else if (userByUsername != null) {</span>
+<span class="fc" id="L172">            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.format(baseErrorMessage, &quot;username&quot;, &quot;is&quot;));</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">        } else if (userByName != null) {</span>
+<span class="fc" id="L174">            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.format(baseErrorMessage, &quot;name&quot;, &quot;is&quot;));</span>
+        }
+<span class="fc" id="L176">    }</span>
+    
+    public UserLearningDTO getUserLearning(Long userId) {
+<span class="nc" id="L179">        User user = userRepository.findById(userId)</span>
+<span class="nc" id="L180">        .orElseThrow(() -&gt; new ResponseStatusException(HttpStatus.NOT_FOUND, &quot;User not found&quot;));</span>
+<span class="nc" id="L181">        UserLearningDTO dto = new UserLearningDTO();</span>
+        
+<span class="nc bnc" id="L183" title="All 2 branches missed.">        for (CountryProgressEntry entry : user.getCountryProgress()) {</span>
+<span class="nc" id="L184">            Country country = entry.getCountry();</span>
+<span class="nc" id="L185">            String info = entry.getInfoLearnt();</span>
+            
+<span class="nc" id="L187">            UserLearningDTO.CountryProgressInfo progressInfo = dto.getProgressMap()</span>
+<span class="nc" id="L188">            .computeIfAbsent(country, k -&gt; {</span>
+<span class="nc" id="L189">                UserLearningDTO.CountryProgressInfo infoObj = new UserLearningDTO.CountryProgressInfo();</span>
+<span class="nc" id="L190">                infoObj.setInfoLearnt(new ArrayList&lt;&gt;());</span>
+<span class="nc" id="L191">                return infoObj;</span>
+            });
+            
+<span class="nc" id="L194">            progressInfo.getInfoLearnt().add(info);</span>
+<span class="nc" id="L195">            progressInfo.setCorrect(progressInfo.getInfoLearnt().size());</span>
+<span class="nc" id="L196">        }</span>
+        
+<span class="nc" id="L198">        return dto;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

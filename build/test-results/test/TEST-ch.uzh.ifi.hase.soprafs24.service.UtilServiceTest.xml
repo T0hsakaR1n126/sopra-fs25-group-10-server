@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ch.uzh.ifi.hase.soprafs24.service.UtilServiceTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2025-04-22T12:35:45" hostname="rohit-precision" time="1.008">
+  <properties/>
+  <testcase name="testGenerateClues_validOutput_returns5Clues()" classname="ch.uzh.ifi.hase.soprafs24.service.UtilServiceTest" time="1.008"/>
+  <system-out><![CDATA[Country: Albania
+[1] This nation's coastline meets both the Adriatic and Ionian Seas.
+[2] Its terrain is mostly mountainous, offering scenic hiking opportunities.
+[3] The country's highest peak is Mount Korab, shared with another nation.
+[4] Olive groves and citrus orchards flourish in its warmer coastal regions.
+[5] The Osumi River has carved out a large canyon popular for ecotourism.
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
