@@ -1,6 +1,7 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
 import ch.uzh.ifi.hase.soprafs24.constant.Country;
+
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
 import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
@@ -33,10 +34,10 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class UtilService {
+
     private static final int FILL_SIZE = 10;
     private static final int HINT_NUMBER = 5;
 
-//    private static final String GEMINI_API_KEY = "AIzaSyDOukvhZmaQlP38T1bdTGGnc5X-TYRr_Gc";
     private static final String GEMINI_API_KEY = "AIzaSyDY8tpkqRT5UkmNP0U3NuOtfnR--O9_fps";
     private static final String MODEL_URL =
             "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + GEMINI_API_KEY;
@@ -44,6 +45,7 @@ public class UtilService {
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Queue<Map<Country, List<Map<String, Object>>>> hintCache = new ConcurrentLinkedDeque<>();
+
     private final Logger log = LoggerFactory.getLogger(UtilService.class);
 
     private final GameRepository gameRepository;
@@ -58,6 +60,7 @@ public class UtilService {
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+
 
     public Queue<Map<Country, List<Map<String, Object>>>> getHintCache() {
         return hintCache;
@@ -81,6 +84,7 @@ public class UtilService {
                     hintCache.add(newHint);
                 }
                 Thread.sleep(1500);
+
             }
             catch (Exception e) {
                 System.err.println("Failed to generate hint (attempt " + (attempts + 1) + "): " + e.getMessage());
@@ -100,6 +104,7 @@ public class UtilService {
             hintCache.add(hint);
         }
     }
+
 
     public String formatTime(int totalSeconds) {
         int minutes = totalSeconds / 60;
@@ -254,6 +259,5 @@ public class UtilService {
         result.put(country, clueList);
         return result;
     }
-
 
 }

@@ -1,19 +1,43 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
 import ch.uzh.ifi.hase.soprafs24.constant.Country;
+import ch.uzh.ifi.hase.soprafs24.constant.GameAccessType;
+import ch.uzh.ifi.hase.soprafs24.constant.GameHints;
+import ch.uzh.ifi.hase.soprafs24.constant.GameMode;
+import ch.uzh.ifi.hase.soprafs24.constant.GameRoleType;
+import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
+import ch.uzh.ifi.hase.soprafs24.constant.GuessResult;
+import ch.uzh.ifi.hase.soprafs24.constant.PlayerStatus;
+import ch.uzh.ifi.hase.soprafs24.constant.TeamStatus;
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
+import ch.uzh.ifi.hase.soprafs24.entity.CountryProgressEntry;
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
+import ch.uzh.ifi.hase.soprafs24.entity.HintEntry;
+import ch.uzh.ifi.hase.soprafs24.entity.Player;
+import ch.uzh.ifi.hase.soprafs24.entity.Team;
 import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
+import ch.uzh.ifi.hase.soprafs24.repository.PlayerRepository;
+import ch.uzh.ifi.hase.soprafs24.repository.TeamRepository;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.GameCreateResponseDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GamePostDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.GameStartDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.HintGetDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.OneVsOneResultDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerResultDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.SoloResultDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.TeamVsTeamResultDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.UserHistoryDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
 import ch.uzh.ifi.hase.soprafs24.service.UtilService;
 import ch.uzh.ifi.hase.soprafs24.constant.Country;
 
+import org.hibernate.query.criteria.internal.expression.function.AggregationFunction.MAX;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,28 +51,44 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+
 import java.util.*;
 import java.util.stream.Collectors;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.time.Duration;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * User Service
- * This class is the "worker" and responsible for all functionality related to
- * the user
- * (e.g., it creates, modifies, deletes, finds). The result will be passed back
- * to the caller.
- */
+* User Service
+* This class is the "worker" and responsible for all functionality related to
+* the user
+* (e.g., it creates, modifies, deletes, finds). The result will be passed back
+* to the caller.
+*/
 @Service
 @Transactional
 public class GameService {
-
     private final Logger log = LoggerFactory.getLogger(GameService.class);
-
+    
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
-
     private Map<Country, List<Map<String, Object>>> generatedHints;
 
     private Map<Long, Country> answers = new HashMap<>();
@@ -60,10 +100,14 @@ public class GameService {
     private UtilService utilService;
 
     public GameService(
-            @Qualifier("gameRepository") GameRepository gameRepository,
-            @Qualifier("userRepository") UserRepository userRepository) {
+    @Qualifier("gameRepository") GameRepository gameRepository,
+    @Qualifier("userRepository") UserRepository userRepository,
+    @Qualifier("playerRepository") PlayerRepository playerRepository,
+    @Qualifier("teamRepository") TeamRepository teamRepository) {
+        this.playerRepository = playerRepository;
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
+        this.teamRepository = teamRepository;
     }
 
     public Game createGame(Game gameToCreate) {
@@ -534,6 +578,4 @@ public class GameService {
 
         }
     }
-
-
 }

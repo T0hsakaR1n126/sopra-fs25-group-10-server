@@ -2,8 +2,11 @@ package ch.uzh.ifi.hase.soprafs24.service;
 
 import ch.uzh.ifi.hase.soprafs24.constant.Country;
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
+import ch.uzh.ifi.hase.soprafs24.entity.CountryProgressEntry;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.UserLearningDTO;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,159 +17,188 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+
 import java.util.*;
+import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 
 /**
- * User Service
- * This class is the "worker" and responsible for all functionality related to
- * the user
- * (e.g., it creates, modifies, deletes, finds). The result will be passed back
- * to the caller.
- */
+* User Service
+* This class is the "worker" and responsible for all functionality related to
+* the user
+* (e.g., it creates, modifies, deletes, finds). The result will be passed back
+* to the caller.
+*/
 @Service
 @Transactional
 public class UserService {
-
-  private final Logger log = LoggerFactory.getLogger(UserService.class);
-
-  private final UserRepository userRepository;
-
-  private static final Set<String> VALID_AVATARS = Set.of(
+    
+    private final Logger log = LoggerFactory.getLogger(UserService.class);
+    
+    private final UserRepository userRepository;
+    
+    private static final Set<String> VALID_AVATARS = Set.of(
     "avatar1.png",
     "avatar2.png",
     "avatar3.png",
     "avatar4.png",
     "avatar5.png"
-  );
-
-  @Autowired
-  public UserService(@Qualifier("userRepository") UserRepository userRepository) {
-    this.userRepository = userRepository;
-  }
-
-  public List<User> getUsers() {
-    return this.userRepository.findAll();
-  }
-
-  public User createUser(User newUser) {
-    newUser.setToken(UUID.randomUUID().toString());
-    newUser.setStatus(UserStatus.OFFLINE);
-    checkIfUserExists(newUser);
-    // saves the given entity but data is only persisted in the database once
-    // flush() is called
-    newUser = userRepository.save(newUser);
-    userRepository.flush();
-
-    log.debug("Created Information for User: {}", newUser);
-    return newUser;
-  }
-
-  public void changePassword(Long userId, String currentPassword, String newPassword) {
-    // search user by ID
-    User user = userRepository.findById(userId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
-    // check if current password is correct
-    if (!user.getPassword().equals(currentPassword)) {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Incorrect current password");
+    );
+    
+    @Autowired
+    public UserService(@Qualifier("userRepository") UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
-
-    // Check if new password is valid
-    if (newPassword == null || newPassword.trim().isEmpty()) {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "New password must not be empty");
+    
+    public List<User> getUsers() {
+        return this.userRepository.findAll();
     }
-
-    // update password
-    user.setPassword(newPassword);
-    userRepository.save(user);
-  }
-
-  public User login(User loginUser) {
-    User userInDB = userRepository.findByUsername(loginUser.getUsername());
-    if (userInDB == null || !userInDB.getPassword().equals(loginUser.getPassword())) {
-        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
+    
+    public User createUser(User newUser) {
+        newUser.setToken(UUID.randomUUID().toString());
+        newUser.setStatus(UserStatus.OFFLINE);
+        checkIfUserExists(newUser);
+        // saves the given entity but data is only persisted in the database once
+        // flush() is called
+        newUser = userRepository.save(newUser);
+        userRepository.flush();
+        
+        log.debug("Created Information for User: {}", newUser);
+        return newUser;
     }
-
-    userInDB.setStatus(UserStatus.ONLINE);
-    userInDB.setToken(UUID.randomUUID().toString());
-    userRepository.save(userInDB);
-    return userInDB;
-  }
-
-  public void logout(User user) {
-    User userInDB = userRepository.findByToken(user.getToken());
-    if (userInDB == null) {
-        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
-    }
-
-    userInDB.setStatus(UserStatus.OFFLINE);
-    userRepository.save(userInDB);
-  }
-
-  public User findUserById(Long userId) {
-    return userRepository.findById(userId)
+    
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
+        // search user by ID
+        User user = userRepository.findById(userId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-  }
-
-  public User userAuthenticate(User authenticateUser) {
-    User userVerified = userRepository.findByToken(authenticateUser.getToken());
-    if (userVerified == null) {
-        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User Not Authenticated");
+        
+        // check if current password is correct
+        if (!user.getPassword().equals(currentPassword)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Incorrect current password");
+        }
+        
+        // Check if new password is valid
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "New password must not be empty");
+        }
+        
+        // update password
+        user.setPassword(newPassword);
+        userRepository.save(user);
     }
-    return userVerified;
-  }
-
-  public User updateUserProfile(Long userId, User updatedInfo) {
-    User userInDB = userRepository.findById(userId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
-    // username empty check
-    if (updatedInfo.getUsername() == null || updatedInfo.getUsername().trim().isEmpty()) {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username must not be empty");
+    
+    public User login(User loginUser) {
+        User userInDB = userRepository.findByUsername(loginUser.getUsername());
+        if (userInDB == null || !userInDB.getPassword().equals(loginUser.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
+        }
+        
+        userInDB.setStatus(UserStatus.ONLINE);
+        userInDB.setToken(UUID.randomUUID().toString());
+        userRepository.save(userInDB);
+        return userInDB;
     }
-
-    // username duplication check
-    if (!userInDB.getUsername().equals(updatedInfo.getUsername())
-            && userRepository.findByUsername(updatedInfo.getUsername()) != null) {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username already exists");
+    
+    public void logout(User user) {
+        User userInDB = userRepository.findByToken(user.getToken());
+        if (userInDB == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
+        
+        userInDB.setStatus(UserStatus.OFFLINE);
+        userRepository.save(userInDB);
     }
-
-    // avatar check
-    if (updatedInfo.getAvatar() != null && !VALID_AVATARS.contains(updatedInfo.getAvatar())) {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid avatar selection");
+    
+    public User findUserById(Long userId) {
+        return userRepository.findById(userId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
     }
-
-    userInDB.setUsername(updatedInfo.getUsername());
-    userInDB.setAvatar(updatedInfo.getAvatar());
-    userInDB.setEmail(updatedInfo.getEmail());
-    userInDB.setBio(updatedInfo.getBio());
-
-    userRepository.save(userInDB);
-    return userInDB;
-  }
-
-  /**
-   * This is a helper method that will check the uniqueness criteria of the
-   * username and the name
-   * defined in the User entity. The method will do nothing if the input is unique
-   * and throw an error otherwise.
-   *
-   * @param userToBeCreated
-   * @throws org.springframework.web.server.ResponseStatusException
-   * @see User
-   */
-  private void checkIfUserExists(User userToBeCreated) {
-    User userByUsername = userRepository.findByUsername(userToBeCreated.getUsername());
-    User userByName = userRepository.findByName(userToBeCreated.getName());
-
-    String baseErrorMessage = "The %s provided %s not unique. Therefore, the user could not be created!";
-    if (userByUsername != null && userByName != null) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-          String.format(baseErrorMessage, "username and the name", "are"));
-    } else if (userByUsername != null) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.format(baseErrorMessage, "username", "is"));
-    } else if (userByName != null) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.format(baseErrorMessage, "name", "is"));
+    
+    public User userAuthenticate(User authenticateUser) {
+        User userVerified = userRepository.findByToken(authenticateUser.getToken());
+        if (userVerified == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User Not Authenticated");
+        }
+        return userVerified;
     }
-  }
+    
+    public User updateUserProfile(Long userId, User updatedInfo) {
+        User userInDB = userRepository.findById(userId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        
+        // username empty check
+        if (updatedInfo.getUsername() == null || updatedInfo.getUsername().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username must not be empty");
+        }
+        
+        // username duplication check
+        if (!userInDB.getUsername().equals(updatedInfo.getUsername())
+        && userRepository.findByUsername(updatedInfo.getUsername()) != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username already exists");
+        }
+        
+        // avatar check
+        if (updatedInfo.getAvatar() != null && !VALID_AVATARS.contains(updatedInfo.getAvatar())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid avatar selection");
+        }
+        
+        userInDB.setUsername(updatedInfo.getUsername());
+        userInDB.setAvatar(updatedInfo.getAvatar());
+        userInDB.setEmail(updatedInfo.getEmail());
+        userInDB.setBio(updatedInfo.getBio());
+        
+        userRepository.save(userInDB);
+        return userInDB;
+    }
+    
+    /**
+    * This is a helper method that will check the uniqueness criteria of the
+    * username and the name
+    * defined in the User entity. The method will do nothing if the input is unique
+    * and throw an error otherwise.
+    *
+    * @param userToBeCreated
+    * @throws org.springframework.web.server.ResponseStatusException
+    * @see User
+    */
+    private void checkIfUserExists(User userToBeCreated) {
+        User userByUsername = userRepository.findByUsername(userToBeCreated.getUsername());
+        User userByName = userRepository.findByName(userToBeCreated.getName());
+        
+        String baseErrorMessage = "The %s provided %s not unique. Therefore, the user could not be created!";
+        if (userByUsername != null && userByName != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+            String.format(baseErrorMessage, "username and the name", "are"));
+        } else if (userByUsername != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.format(baseErrorMessage, "username", "is"));
+        } else if (userByName != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.format(baseErrorMessage, "name", "is"));
+        }
+    }
+    
+    public UserLearningDTO getUserLearning(Long userId) {
+        User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        UserLearningDTO dto = new UserLearningDTO();
+        
+        for (CountryProgressEntry entry : user.getCountryProgress()) {
+            Country country = entry.getCountry();
+            String info = entry.getInfoLearnt();
+            
+            UserLearningDTO.CountryProgressInfo progressInfo = dto.getProgressMap()
+            .computeIfAbsent(country, k -> {
+                UserLearningDTO.CountryProgressInfo infoObj = new UserLearningDTO.CountryProgressInfo();
+                infoObj.setInfoLearnt(new ArrayList<>());
+                return infoObj;
+            });
+            
+            progressInfo.getInfoLearnt().add(info);
+            progressInfo.setCorrect(progressInfo.getInfoLearnt().size());
+        }
+        
+        return dto;
+    }
 }

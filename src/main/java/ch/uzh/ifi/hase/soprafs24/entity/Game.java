@@ -1,23 +1,33 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
 
 import javax.persistence.*;
+
+import ch.uzh.ifi.hase.soprafs24.constant.GameAccessType;
+import ch.uzh.ifi.hase.soprafs24.constant.GameMode;
+import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlayerDTO;
+
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 
 /**
- * Internal User Representation
- * This class composes the internal representation of the user and defines how
- * the user is stored in the database.
- * Every variable will be mapped into a database field with the @Column
- * annotation
- * - nullable = false -> this cannot be left empty
- * - unique = true -> this value must be unqiue across the database -> composes
- * the primary key
- */
+* Internal User Representation
+* This class composes the internal representation of the user and defines how
+* the user is stored in the database.
+* Every variable will be mapped into a database field with the @Column
+* annotation
+* - nullable = false -> this cannot be left empty
+* - unique = true -> this value must be unqiue across the database -> composes
+* the primary key
+*/
 @Entity
 @Table(name = "GAME")
 public class Game implements Serializable {
