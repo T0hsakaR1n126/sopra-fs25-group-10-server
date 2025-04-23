@@ -100,8 +100,47 @@ public class GameControllerTest {
     }
 
     @Test
-    public void joinGame_success() throws Exception {
-        doNothing().when(gameService).userJoinGame(any(), eq(1L));
+    public void getGameLobby_success() throws Exception {
+        given(gameService.getAllGames()).willReturn(List.of(game));
+
+        mockMvc.perform(get("/lobby"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void getGameReady_validId_success() throws Exception {
+        given(gameService.getGameByGameId(1L)).willReturn(game);
+
+        mockMvc.perform(get("/game/1"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void joinGame_validRequest_success() throws Exception {
+        LobbyJoinPostDTO joinDTO = new LobbyJoinPostDTO();
+        joinDTO.setUserId(1L);
+        joinDTO.setPassword("pass");
+    
+        Player mockPlayer = new Player();
+        mockPlayer.setPlayerId(1L);
+        mockPlayer.setToken("token");
+    
+        given(gameService.userJoinGame(eq(1L), eq(1L), eq("pass"))).willReturn(mockPlayer);
+    
+        mockMvc.perform(post("/lobby/1/join")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(joinDTO)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.playerId").value(1))
+            .andExpect(jsonPath("$.token").value("token"));
+    }
+
+    
+    @Test
+    public void exitGame_validRequest_success() throws Exception {
+        mockMvc.perform(put("/lobbyOut/1"))
+            .andExpect(status().isOk());
+    }
 
     @Test
     public void startGame_validRequest_success() throws Exception {

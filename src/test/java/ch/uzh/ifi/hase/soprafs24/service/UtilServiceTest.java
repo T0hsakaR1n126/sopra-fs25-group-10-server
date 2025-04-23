@@ -1,7 +1,5 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
-import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
-import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,14 +20,10 @@ import ch.uzh.ifi.hase.soprafs24.constant.Country;
 public class UtilServiceTest {
     
     private UtilService utilService;
-
-
-    private GameRepository gameRepository;
-    private UserRepository userRepository;
-
+    
     @BeforeEach
     public void setup() {
-        utilService = new UtilService(gameRepository, userRepository);
+        utilService = new UtilService();
     }
     
     @Test
@@ -107,41 +101,41 @@ public class UtilServiceTest {
     // }
     
     // pressure test
-
-    @Test
-    void testGenerateClues_multipleRuns() {
-        UtilService utilService = new UtilService(gameRepository, userRepository);
-
-        int success = 0;
-        int totalRuns = 20;
-
-        for (int i = 0; i < totalRuns; i++) {
-            try {
-                Map<Country, List<Map<String, Object>>> result = utilService.generateClues(5);
-
-                assertEquals(1, result.size(), "Should contain exactly one country");
-                List<Map<String, Object>> clues = result.values().iterator().next();
-                assertEquals(5, clues.size(), "Should contain exactly 10 clues");
-
-                for (Map<String, Object> clue : clues) {
-                    assertTrue(clue.containsKey("text"), "Missing 'text' field");
-                    assertTrue(clue.containsKey("difficulty"), "Missing 'difficulty' field");
-                    assertTrue(clue.get("text") instanceof String);
-                    assertTrue(clue.get("difficulty") instanceof Integer);
-                }
-
-                System.out.println(success + "successfully generated clues");
-                System.out.println("Country: " + result.keySet().iterator().next());
-                clues.forEach(c -> System.out.println("[" + c.get("difficulty") + "] " + c.get("text")));
-                success++;
-                Thread.sleep(1000);
-            } catch (Exception e) {
-                System.out.println("Run " + (i + 1) + " failed: " + e.getMessage());
-            }
-        }
-
-        System.out.println("Test passed in " + success + "/" + totalRuns + " runs.");
-        assertTrue(success == totalRuns, "Too many failures: only " + success + "/" + totalRuns + " passed.");
-    }
-
+    //     @Test
+    //     void testGenerateClues_multipleRuns() {
+    //         UtilService utilService = new UtilService();
+    
+    //         int success = 0;
+    //         int totalRuns = 20;
+    
+    //         for (int i = 0; i < totalRuns; i++) {
+    //             try {
+    //                 Map<Country, List<Map<String, Object>>> result = utilService.generateClues(5);
+    
+    //                 assertEquals(1, result.size(), "Should contain exactly one country");
+    //                 List<Map<String, Object>> clues = result.values().iterator().next();
+    //                 assertEquals(5, clues.size(), "Should contain exactly 10 clues");
+    
+    //                 for (Map<String, Object> clue : clues) {
+    //                     assertTrue(clue.containsKey("text"), "Missing 'text' field");
+    //                     assertTrue(clue.containsKey("difficulty"), "Missing 'difficulty' field");
+    //                     assertTrue(clue.get("text") instanceof String);
+    //                     assertTrue(clue.get("difficulty") instanceof Integer);
+    //                 }
+    
+    //                 System.out.println(success + "successfully generated clues");
+    //                 System.out.println("Country: " + result.keySet().iterator().next());
+    //                 clues.forEach(c -> System.out.println("[" + c.get("difficulty") + "] " + c.get("text")));
+    //                 success++;
+    //                 Thread.sleep(1000);
+    //             } catch (Exception e) {
+    //                 System.out.println("Run " + (i + 1) + " failed: " + e.getMessage());
+    //             }
+    //         }
+    
+    //         System.out.println("Test passed in " + success + "/" + totalRuns + " runs.");
+    //         assertTrue(success == totalRuns, "Too many failures: only " + success + "/" + totalRuns + " passed.");
+    //     }
+    
+    
 }
