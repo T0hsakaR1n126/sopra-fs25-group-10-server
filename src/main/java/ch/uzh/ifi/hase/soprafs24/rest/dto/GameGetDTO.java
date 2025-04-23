@@ -25,9 +25,7 @@ public class GameGetDTO {
 
     private Long gameId;
 
-    private GameStatus gameStatus;
-
-    // private Map<Long, Integer> scoreBoard;
+    private Map<String, Integer> scoreBoard;
 
     private String gameName;
 
@@ -85,6 +83,10 @@ public class GameGetDTO {
         this.gameCreationDate = gameCreationDate;
     }
 
+    private boolean judgement;
+
+    private boolean gameRunning;
+
     public Long getGameId() {
         return gameId;
     }
@@ -141,13 +143,13 @@ public class GameGetDTO {
         this.currentPlayersNumber = currentPlayersNumber;
     }   
 
-    // public Map<Long, Integer> getScoreBoard() {
-    //     return scoreBoard;
-    // }
+    public Map<String, Integer> getScoreBoard() {
+        return scoreBoard;
+    }
 
-    // public void setScoreBoard(Map<Long, Integer> scoreBoard) {
-    //     this.scoreBoard = scoreBoard;
-    // }
+    public void setScoreBoard(Map<String, Integer> scoreBoard) {
+        this.scoreBoard = scoreBoard;
+    }
 
     public Integer getTime() {
         return time;
@@ -259,6 +261,21 @@ public class GameGetDTO {
 
     public void setStartTime(LocalDateTime startTime) {
         this.startTime = startTime;
+    }
+    public void setJudgement(boolean judgement){
+        this.judgement = judgement;
+    }
+  
+    public boolean getJudgement(){
+        return judgement;
+    }
+
+    public void setGameRunning(boolean gameRunning){
+        this.gameRunning = gameRunning;
+    }
+  
+    public boolean getGameRunning(){
+        return gameRunning;
     }
 }
 
