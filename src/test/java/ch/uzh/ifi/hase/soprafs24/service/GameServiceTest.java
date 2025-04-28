@@ -39,6 +39,7 @@ import static org.mockito.Mockito.*;
 @MockitoSettings(strictness = Strictness.LENIENT)
 @ExtendWith(org.mockito.junit.jupiter.MockitoExtension.class)
 @ExtendWith(MockitoExtension.class)
+
 public class GameServiceTest {
 
     @Mock
@@ -47,10 +48,12 @@ public class GameServiceTest {
     @Mock
     private UserRepository userRepository;
 
+
     @Mock
     private SimpMessagingTemplate messagingTemplate;
 
     @Spy
+    
     @InjectMocks
     private GameService gameService;
 
@@ -59,6 +62,7 @@ public class GameServiceTest {
 
     @BeforeEach
     public void setup() {
+    
         testGame = new Game();
         testGame.setGameName("Test Game");
         testGame.setOwnerId(1L);
@@ -109,6 +113,7 @@ public class GameServiceTest {
         });
 
         assertTrue(exception.getReason().toLowerCase().contains("gamename"));
+
     }
 
     @Test
