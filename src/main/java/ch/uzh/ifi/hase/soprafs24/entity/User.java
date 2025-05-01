@@ -1,6 +1,7 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
 
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
+import ch.uzh.ifi.hase.soprafs24.constant.Country;
 
 import javax.persistence.*;
 
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Internal User Representation
@@ -46,6 +48,15 @@ public class User implements Serializable {
         @Column(name = "totalQuestions", nullable = false)
         private int totalQuestions;
 
+        @Column(name = "gameCreationDate", nullable = false)
+        private String gameCreationDate;
+
+        @Column(name = "gameTime", nullable = false)
+        private int gameTime;
+
+        @Column(name = "modeType", nullable = false)
+        private String modeType;
+
         public int getScore() {
             return score;
         }
@@ -68,6 +79,30 @@ public class User implements Serializable {
 
         public void setTotalQuestions(int totalQuestions) {
             this.totalQuestions = totalQuestions;
+        }
+
+        public String getGameCreationDate() {
+            return gameCreationDate;
+        }
+        
+        public void setGameCreationDate(String gameCreationDate) {
+            this.gameCreationDate = gameCreationDate;
+        }
+
+        public int getGameTime() {
+            return gameTime;
+        }
+        
+        public void setGameTime(int gameTime) {
+            this.gameTime = gameTime;
+        }
+
+        public String getModeType() {
+            return modeType;
+         }
+       
+        public void setModeType(String modeType) {
+           this.modeType = modeType;
         }
     }
 
@@ -110,6 +145,12 @@ public class User implements Serializable {
     @CollectionTable(name = "userGameHistory", joinColumns = @JoinColumn(name = "userId"))
     @MapKeyColumn(name = "gameName")
     private Map<String, GameQuickSave> gameHistory = new HashMap<>();
+
+    @ElementCollection
+    @CollectionTable(name = "userLearningTrack", joinColumns = @JoinColumn(name = "userId"))
+    @MapKeyColumn(name = "Country")
+    @Column(name = "Counter")
+    private Map<Country, Integer> learningTracking = new HashMap<>();
 
     public Long getUserId() {
         return userId;
@@ -199,12 +240,21 @@ public class User implements Serializable {
         this.level = level;
     }
 
-    public void setGameHistory(String gameName, int score, int correct, int total) {
+    public void setGameHistory(String gameName, int score, int correct, int total, String gameCreationDate, int gameTime, String modeType) {
         GameQuickSave gameQuickSave = new GameQuickSave();
         gameQuickSave.setScore(score);
         gameQuickSave.setCorrectAnswers(correct);
         gameQuickSave.setTotalQuestions(total);
-        gameHistory.put(gameName, gameQuickSave);
+        gameQuickSave.setGameCreationDate(gameCreationDate);
+        gameQuickSave.setGameTime(gameTime);
+        if(gameHistory.containsKey(gameName)){
+            String uniqueName = gameName + UUID.randomUUID().toString().substring(0, 4);
+            gameHistory.put(uniqueName, gameQuickSave);
+        }
+        else{
+            gameHistory.put(gameName, gameQuickSave);  
+        }
+        gameQuickSave.setModeType(modeType);
     }
 
     public Map<String, GameQuickSave> getGameHistory(){
@@ -221,5 +271,13 @@ public class User implements Serializable {
 
     public int getGameTotalQuestions(String gameName) {
         return gameHistory.get(gameName).getTotalQuestions();
+    }
+
+    public void updateLearningTrack(Country country){
+        learningTracking.merge(country, 1, Integer::sum);
+    }
+
+    public Map<Country,Integer> getLearningTracking(){
+        return learningTracking;
     }
 }

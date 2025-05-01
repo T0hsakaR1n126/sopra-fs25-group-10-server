@@ -88,6 +88,8 @@ public class GameController {
     return allPlayersDTOs;
   }
 
+  
+
   @PutMapping("/start/{gameId}")
   @ResponseStatus(HttpStatus.OK)
   @ResponseBody
@@ -139,6 +141,28 @@ public class GameController {
   @ResponseBody
   public void saveGame(@PathVariable Long gameId){
       gameService.saveGame(gameId);
+  }
+
+  @PostMapping("/startsolo")
+  @ResponseStatus(HttpStatus.CREATED)
+  @ResponseBody
+  public void startsoloGame(@RequestBody GamePostDTO gamePostDTO){
+    Game gameToStart = DTOMapper.INSTANCE.convertGamePostDTOtoGameEntity(gamePostDTO);
+    gameService.startSoloGame(gameToStart);
+  }
+
+  @PostMapping("/codejoin")
+  @ResponseStatus(HttpStatus.OK)
+  @ResponseBody
+  public GameGetDTO joinGamebyCode(@RequestBody GamePostDTO gamePostDTO){
+    return gameService.joinGamebyCode(gamePostDTO);
+  }
+
+  @PutMapping("/infinite/{gameId}")
+  @ResponseStatus(HttpStatus.OK)
+  @ResponseBody
+  public void joinGamebyCode(@PathVariable Long gameId){
+    gameService.saveGame(gameId);
   }
     
 }
