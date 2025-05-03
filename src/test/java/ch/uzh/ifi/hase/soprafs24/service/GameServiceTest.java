@@ -604,4 +604,171 @@ public class GameServiceTest {
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
         assertTrue(exception.getReason().contains("Game with your gameCode doesn't exist! Please try another gameCode!"));
     }
+
+    @Test
+    public void userExitGame_userIsNotOwner_success() {
+        Long ownerId = 1L;
+        Long userId = 2L;
+        Long gameId = 100L;
+    
+        Game mockGame = new Game();
+        mockGame.setGameId(gameId);
+        mockGame.setOwnerId(ownerId);
+        mockGame.setPlayers(new ArrayList<>(List.of(ownerId, userId)));
+        mockGame.setRealPlayersNumber(2);
+    
+        User mockUser = new User();
+        mockUser.setUserId(userId);
+        mockUser.setGame(mockGame);
+    
+        when(userRepository.findByUserId(userId)).thenReturn(mockUser);
+        doReturn(List.of()).when(gameService).getGamePlayers(gameId); // 🛠加上这一行，mock getGamePlayers避免空指针！
+    
+        // Act
+        gameService.userExitGame(userId);
+    
+        // Assert
+        verify(gameRepository).save(mockGame);
+        verify(userRepository).save(mockUser);
+        assertEquals(1, mockGame.getRealPlayersNumber());
+        assertNull(mockUser.getGame());
+    }
+    
+
+    @Test
+    public void userExitGame_ownerIsOnlyPlayer_deletesGame() {
+        Long ownerId = 1L;
+        Long gameId = 100L;
+    
+        Game mockGame = new Game();
+        mockGame.setGameId(gameId);
+        mockGame.setOwnerId(ownerId);
+        mockGame.setPlayers(new ArrayList<>(List.of(ownerId)));
+        mockGame.setRealPlayersNumber(1);
+    
+        User mockUser = new User();
+        mockUser.setUserId(ownerId);
+        mockUser.setGame(mockGame);
+    
+        when(userRepository.findByUserId(ownerId)).thenReturn(mockUser);
+    
+        // Act
+        gameService.userExitGame(ownerId);
+    
+        // Assert
+        verify(gameRepository).deleteByGameId(gameId);
+        verify(userRepository).save(mockUser);
+        assertNull(mockUser.getGame());
+    }
+
+    @Test
+    public void userExitGame_ownerWithOtherPlayers_transfersOwnership() {
+        Long ownerId = 1L;
+        Long newOwnerId = 2L;
+        Long gameId = 100L;
+    
+        Game mockGame = new Game();
+        mockGame.setGameId(gameId);
+        mockGame.setOwnerId(ownerId);
+        mockGame.setRealPlayersNumber(2);
+        mockGame.setPlayers(new ArrayList<>(List.of(ownerId, newOwnerId))); // 🛠 很重要，不然players是null
+    
+        User ownerUser = new User();
+        ownerUser.setUserId(ownerId);
+        ownerUser.setGame(mockGame);
+    
+        User newOwnerUser = new User();
+        newOwnerUser.setUserId(newOwnerId);
+        newOwnerUser.setGame(mockGame);
+    
+        when(userRepository.findByUserId(ownerId)).thenReturn(ownerUser);
+        when(userRepository.findByUserId(newOwnerId)).thenReturn(newOwnerUser);
+    
+        doReturn(new ArrayList<>(List.of(newOwnerUser))).when(gameService).getGamePlayers(gameId); // mock getGamePlayers避免NPE
+    
+        // Act
+        gameService.userExitGame(ownerId);
+    
+        // Assert
+        verify(gameRepository).save(mockGame);
+        verify(userRepository).save(ownerUser);
+        assertEquals(newOwnerId, mockGame.getOwnerId()); // 新的Owner应该是newOwnerId
+        assertNull(ownerUser.getGame());
+    }   
+
+    @Test
+    public void submitScores_gameNotFound_throwsException() {
+        // Arrange
+        Long gameId = 1L;
+    
+        when(gameRepository.findBygameId(gameId)).thenReturn(null);
+    
+        // Act & Assert
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+            gameService.submitScores(gameId, new HashMap<>(), new HashMap<>(), new HashMap<>());
+        });
+    
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        assertTrue(exception.getReason().contains("Game not found"));
+    }
+    
+    @Test
+    public void submitScores_validInput_updatesGameAndSaves() {
+        // Arrange
+        Long gameId = 1L;
+        Long userId = 100L;
+    
+        Game mockGame = new Game();
+        mockGame.setGameId(gameId);
+        mockGame.setRealPlayersNumber(1);
+        mockGame.setScoreBoard(new HashMap<>());
+    
+        Map<Long, Integer> scoreMap = Map.of(userId, 80);
+        Map<Long, Integer> correctAnswersMap = Map.of(userId, 8);
+        Map<Long, Integer> totalQuestionsMap = Map.of(userId, 10);
+    
+        when(gameRepository.findBygameId(gameId)).thenReturn(mockGame);
+    
+        // Act
+        gameService.submitScores(gameId, scoreMap, correctAnswersMap, totalQuestionsMap);
+    
+        // Assert
+        assertEquals(80, mockGame.getScoreBoard().get(userId));
+        assertEquals(8, mockGame.getCorrectAnswersMap().get(userId));
+        assertEquals(10, mockGame.getTotalQuestionsMap().get(userId));
+        assertEquals("8 of 10 correct", mockGame.getResultSummaryMap().get(userId));
+        assertNotNull(mockGame.getEndTime());  // 游戏应该结束
+        verify(gameRepository, times(1)).save(mockGame);
+    }
+
+    @Test
+    public void submitScores_partialSubmission_noEndTime() {
+        // Arrange
+        Long gameId = 2L;
+        Long userId = 200L;
+    
+        Game mockGame = new Game();
+        mockGame.setGameId(gameId);
+        mockGame.setRealPlayersNumber(3); // 总共需要3个人才算完成
+        mockGame.setScoreBoard(new HashMap<>()); // 当前得分人数不够
+    
+        Map<Long, Integer> scoreMap = Map.of(userId, 50); // 只提交了一个人
+        Map<Long, Integer> correctAnswersMap = Map.of(userId, 5);
+        Map<Long, Integer> totalQuestionsMap = Map.of(userId, 10);
+    
+        when(gameRepository.findBygameId(gameId)).thenReturn(mockGame);
+    
+        // Act
+        gameService.submitScores(gameId, scoreMap, correctAnswersMap, totalQuestionsMap);
+    
+        // Assert
+        assertEquals(50, mockGame.getScoreBoard().get(userId));
+        assertEquals(5, mockGame.getCorrectAnswersMap().get(userId));
+        assertEquals(10, mockGame.getTotalQuestionsMap().get(userId));
+        assertEquals("5 of 10 correct", mockGame.getResultSummaryMap().get(userId));
+        assertNull(mockGame.getEndTime());  // 游戏**不应该结束**
+        verify(gameRepository, times(1)).save(mockGame);
+    }
+
+
 }
