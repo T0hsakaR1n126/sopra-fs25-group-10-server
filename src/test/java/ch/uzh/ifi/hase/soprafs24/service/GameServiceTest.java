@@ -237,6 +237,86 @@ public class GameServiceTest {
         assertTrue(exception.getReason().contains("Wrong Password"));
     }
 
+        @Test
+    void chatChecksForGame_validData_passes() {
+        Long gameId = 1L;
+        String username = "Player1";
+        Long userId = 100L;
+
+        Game game = new Game();
+        game.setPlayers(Collections.singletonList(userId));
+        game.setEndTime(null);
+
+        User user = new User();
+        user.setUserId(userId);
+        user.setUsername(username);
+
+        when(gameRepository.findBygameId(gameId)).thenReturn(game);
+        when(userRepository.findByUsername(username)).thenReturn(user);
+
+        assertDoesNotThrow(() -> gameService.chatChecksForGame(gameId, username));
+    }
+
+    @Test
+    void chatChecksForGame_gameNotFound_throwsNotFound() {
+        when(gameRepository.findBygameId(1L)).thenReturn(null);
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
+                gameService.chatChecksForGame(1L, "Player1"));
+        assertEquals(404, ex.getStatus().value());
+        assertTrue(ex.getReason().contains("Game Not Found"));
+    }
+
+    @Test
+    void chatChecksForGame_userNotFound_throwsNotFound() {
+        Game game = new Game();
+        game.setPlayers(Collections.singletonList(1L));
+        when(gameRepository.findBygameId(1L)).thenReturn(game);
+        when(userRepository.findByUsername("Player1")).thenReturn(null);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
+                gameService.chatChecksForGame(1L, "Player1"));
+        assertEquals(404, ex.getStatus().value());
+        assertTrue(ex.getReason().contains("User Not Found"));
+    }
+
+    @Test
+    void chatChecksForGame_userNotInGame_throwsForbidden() {
+        Game game = new Game();
+        game.setPlayers(Collections.singletonList(2L));  // different user ID
+
+        User user = new User();
+        user.setUserId(1L);
+        user.setUsername("Player1");
+
+        when(gameRepository.findBygameId(1L)).thenReturn(game);
+        when(userRepository.findByUsername("Player1")).thenReturn(user);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
+                gameService.chatChecksForGame(1L, "Player1"));
+        assertEquals(403, ex.getStatus().value());
+        assertTrue(ex.getReason().contains("User is not a participant"));
+    }
+
+    @Test
+    void chatChecksForGame_gameEnded_throwsForbidden() {
+        Long userId = 1L;
+        Game game = new Game();
+        game.setPlayers(Collections.singletonList(userId));
+        game.setEndTime(LocalDateTime.now());  // ended game
+
+        User user = new User();
+        user.setUserId(userId);
+        user.setUsername("Player1");
+
+        when(gameRepository.findBygameId(1L)).thenReturn(game);
+        when(userRepository.findByUsername("Player1")).thenReturn(user);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
+                gameService.chatChecksForGame(1L, "Player1"));
+        assertEquals(403, ex.getStatus().value());
+        assertTrue(ex.getReason().contains("Game endeded"));
+    }
+
     // @Test
     // public void userStartGame_successfullyStartGame() {
     //     Long gameId = 100L;
