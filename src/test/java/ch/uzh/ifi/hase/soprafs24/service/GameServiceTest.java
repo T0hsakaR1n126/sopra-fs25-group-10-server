@@ -282,6 +282,49 @@ public class GameServiceTest {
     //     verify(gameRepository, atLeastOnce()).save(mockGame);
     //     verify(gameRepository).flush();
     // }
+
+    @Test
+    public void joinGamebyCode_successfully() {
+        Game mockGame = new Game();
+        mockGame.setGameId(100L);
+        mockGame.setGameRunning(false);
+        mockGame.setPlayersNumber(4);
+        mockGame.setRealPlayersNumber(2);
+        mockGame.setGameCode("123456");
+
+        GamePostDTO joinRequest = new GamePostDTO();
+        joinRequest.setGameCode("123456");
+
+        when(gameRepository.findBygameCode("123456")).thenReturn(mockGame);
+
+        GameGetDTO joinedGame = gameService.joinGamebyCode(joinRequest);
+
+        assertEquals(100L, joinedGame.getGameId());
+        assertEquals(false, joinedGame.getGameRunning());
+        assertEquals("123456", joinedGame.getGameCode());
+    }
+
+    @Test
+    public void joinGamebyCode_wrongGameCode_throwNotFound() {
+        Game mockGame = new Game();
+        mockGame.setGameId(100L);
+        mockGame.setGameRunning(false);
+        mockGame.setPlayersNumber(4);
+        mockGame.setRealPlayersNumber(2);
+        mockGame.setGameCode("123456");
+
+        GamePostDTO joinRequest = new GamePostDTO();
+        joinRequest.setGameCode("234567");
+
+        when(gameRepository.findBygameCode("123456")).thenReturn(mockGame);
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+            gameService.joinGamebyCode(joinRequest);
+        });
+
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        assertTrue(exception.getReason().contains("Game with your gameCode doesn't exist! Please try another gameCode!"));
+    }
 }
 
 
