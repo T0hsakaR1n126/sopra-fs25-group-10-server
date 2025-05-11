@@ -31,6 +31,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentHashMap;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -49,8 +53,6 @@ import static org.mockito.BDDMockito.then;
 @ExtendWith(MockitoExtension.class)
 
 public class GameServiceTest {
-    @Autowired
-    private UtilService utilService;
     
     @Mock
     private GameRepository gameRepository;
@@ -60,9 +62,11 @@ public class GameServiceTest {
     
     @Mock
     private SimpMessagingTemplate messagingTemplate;
-    
+
+    @Mock
+    private UtilService mockUtilService;
+
     @Spy
-    
     @InjectMocks
     private GameService gameService;
     
@@ -76,7 +80,7 @@ public class GameServiceTest {
     
     @BeforeEach
     public void setup() {
-        // Setup Game entity
+        // Setup Game
         testGame = new Game();
         testGame.setGameName("Test Game");
         testGame.setGameId(1L);
@@ -85,8 +89,12 @@ public class GameServiceTest {
         testGame.setTime(5);
         testGame.setModeType("solo");
         testGame.setPassword("1234");
+        testGame.setDifficulty("easy");
+
+        Map<Long, Integer> scoreBoard = new HashMap<>();
+        scoreBoard.put(1L, 0);
+        testGame.setScoreBoard(scoreBoard);
         
-        // Setup maps for tracking questions and answers
         Map<Long, Integer> totalQuestionsMap = new HashMap<>();
         totalQuestionsMap.put(1L, 10);
         testGame.setTotalQuestionsMap(totalQuestionsMap);
@@ -94,52 +102,20 @@ public class GameServiceTest {
         Map<Long, Integer> correctAnswersMap = new HashMap<>();
         correctAnswersMap.put(1L, 0);
         testGame.setCorrectAnswersMap(correctAnswersMap);
-        
-        // Setup Solo Game entity
+    
+        // Setup Solo Game
         testGameSolo = new Game();
         testGameSolo.setGameName("Test Solo Game");
         testGameSolo.setGameId(2L);
         testGameSolo.setOwnerId(1L);
         testGameSolo.setPlayersNumber(1);
         testGameSolo.setTime(5);
-        testGameSolo.setModeType("solo"); // Solo game mode
+        testGameSolo.setModeType("solo");
         testGameSolo.setPassword("soloPass");
-        
-        // Setup maps for tracking questions and answers for solo game
-        Map<Long, Integer> totalQuestionsMapSolo = new HashMap<>();
-        totalQuestionsMapSolo.put(1L, 10);
-        testGameSolo.setTotalQuestionsMap(totalQuestionsMapSolo);
-        
-        Map<Long, Integer> correctAnswersMapSolo = new HashMap<>();
-        correctAnswersMapSolo.put(1L, 0);
-        testGameSolo.setCorrectAnswersMap(correctAnswersMapSolo);
-        
-        // Setup User entity
-        owner = new User();
-        owner.setUserId(1L);
-        owner.setUsername("Test Owner");
-        
-        UtilService mockUtilService = mock(UtilService.class);
-        
-        Queue<Map<Country, List<Map<String, Object>>>> mockHintQueue = new LinkedList<>();
-        
-        Country mockCountry = Country.Switzerland;
-        Map<String, Object> hintData = new HashMap<>();
-        hintData.put("hint", "It's in Europe");
-        
-        List<Map<String, Object>> hintList = new ArrayList<>();
-        hintList.add(hintData);
-        
-        Map<Country, List<Map<String, Object>>> countryHintMap = new HashMap<>();
-        countryHintMap.put(mockCountry, hintList);
-        
-        mockHintQueue.add(countryHintMap);
-        
-        // Configure mock behavior
-        when(mockUtilService.getHintCache()).thenReturn(mockHintQueue);
-        ReflectionTestUtils.setField(gameService, "utilService", mockUtilService);
-        
-        // Setup Combat Game entity
+        testGameSolo.setTotalQuestionsMap(Map.of(1L, 10));
+        testGameSolo.setCorrectAnswersMap(Map.of(1L, 0));
+    
+        // Setup Combat Game
         testGameCombat = new Game();
         testGameCombat.setGameName("Test Combat Game");
         testGameCombat.setGameId(3L);
@@ -148,55 +124,61 @@ public class GameServiceTest {
         testGameCombat.setTime(5);
         testGameCombat.setModeType("combat");
         testGameCombat.setPassword("combatPass");
-        
-        // Setup maps for tracking questions and answers for combat game
-        Map<Long, Integer> totalQuestionsMapCombat = new HashMap<>();
-        totalQuestionsMapCombat.put(1L, 10);
-        testGameCombat.setTotalQuestionsMap(totalQuestionsMapCombat);
-        
-        Map<Long, Integer> correctAnswersMapCombat = new HashMap<>();
-        correctAnswersMapCombat.put(1L, 0);
-        testGameCombat.setCorrectAnswersMap(correctAnswersMapCombat);
-        
+        testGameCombat.setDifficulty("easy");
+        testGameCombat.setPlayers(List.of(1L, 2L));
+        testGameCombat.setGameRunning(false);
+
+        // Setup users
+        owner = new User();
+        owner.setUserId(1L);
+        owner.setUsername("Test Owner");
+        owner.setReady(true);
+    
         User player2 = new User();
         player2.setUserId(2L);
         player2.setUsername("PlayerTwo");
-        player2.setReady(true); // Mark as ready
-        
-        owner.setReady(true); // Also mark owner (player1) as ready
-        
-        // Add both players to the combat game
-        List<Long> combatPlayers = Arrays.asList(owner.getUserId(), player2.getUserId());
-        testGameCombat.setPlayers(combatPlayers);
-        
-        // Initialize maps for both players
-        Map<Long, Integer> combatTotalQuestionsMap = new HashMap<>();
-        combatTotalQuestionsMap.put(owner.getUserId(), 10);
-        combatTotalQuestionsMap.put(player2.getUserId(), 10);
-        testGameCombat.setTotalQuestionsMap(combatTotalQuestionsMap);
-        
-        Map<Long, Integer> combatCorrectAnswersMap = new HashMap<>();
-        combatCorrectAnswersMap.put(owner.getUserId(), 0);
-        combatCorrectAnswersMap.put(player2.getUserId(), 0);
-        testGameCombat.setCorrectAnswersMap(combatCorrectAnswersMap);
-        
-        // Mock repository behavior for both users
+        player2.setReady(true);
+    
+        testGameCombat.setPlayers(List.of(1L, 2L));
+        testGameCombat.setTotalQuestionsMap(Map.of(1L, 10, 2L, 10));
+        testGameCombat.setCorrectAnswersMap(Map.of(1L, 0, 2L, 0));
+    
+        // Mock repositories
         when(userRepository.findByUserId(1L)).thenReturn(owner);
         when(userRepository.findByUserId(2L)).thenReturn(player2);
-        
-        // Mock repository behavior
-        when(userRepository.findByUserId(1L)).thenReturn(owner);
         when(gameRepository.findByownerId(1L)).thenReturn(null);
-        when(gameRepository.findBygameName("Test Game")).thenReturn(null);
-        when(gameRepository.findBygameName("Test Solo Game")).thenReturn(null);
-        when(gameRepository.findBygameName("Test Combat Game")).thenReturn(null);
-        // when(gameRepository.findBygameId(3L)).thenReturn(null);
-        when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        
-        // Set messagingTemplate
+        when(gameRepository.findBygameName(anyString())).thenReturn(null);
+        when(gameRepository.save(any(Game.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(gameRepository.findBygameId(1L)).thenReturn(testGame);
+        when(gameRepository.findBygameId(3L)).thenReturn(testGameCombat);
+    
+        // Mock hintCache for gameId 3L
+        mockUtilService = mock(UtilService.class);
+        UtilService.HintList mockHintList = new UtilService.HintList(2);
+        mockHintList.userProgress.put(1L, new AtomicInteger(1));
+        mockHintList.userProgress.put(2L, new AtomicInteger(1));
+    
+        Country mockCountry = Country.Switzerland;
+        Map<String, Object> hintData = new HashMap<>();
+        hintData.put("hint", "It's in Europe");
+    
+        List<Map<String, Object>> hintList = new ArrayList<>();
+        hintList.add(hintData);
+    
+        Map<Country, List<Map<String, Object>>> countryHintMap = new HashMap<>();
+        countryHintMap.put(mockCountry, hintList);
+        mockHintList.add(countryHintMap);
+    
+        ConcurrentMap<Long, UtilService.HintList> mockHintCache = new ConcurrentHashMap<>();
+        mockHintCache.put(3L, mockHintList);
+    
+        when(mockUtilService.getHintCache()).thenReturn(mockHintCache);
+        ReflectionTestUtils.setField(gameService, "utilService", mockUtilService);
+    
+        // Inject messaging template
         ReflectionTestUtils.setField(gameService, "messagingTemplate", messagingTemplate);
-        
-        // Initialize DTO
+    
+        // Init DTO for use
         gameGetDTO = new GameGetDTO();
     }
 
@@ -429,75 +411,89 @@ public class GameServiceTest {
         assertEquals(403, ex.getStatus().value());
         assertTrue(ex.getReason().contains("Game endeded"));
     }
-    
+
     @Test
     public void testProcessingAnswer_CorrectCountryAnswer() {
         Long userId = 1L;
-        
+    
+        // Prepare the submitted answer
         GamePostDTO gamePostDTO = new GamePostDTO();
         gamePostDTO.setGameId(1L);
-        gamePostDTO.setSubmitAnswer(Country.Switzerland); // Correct
-        gamePostDTO.setHintUsingNumber(2); // 2 hints used
-        
-        // Mock correct answer
+        gamePostDTO.setSubmitAnswer(Country.Switzerland); // correct answer
+        gamePostDTO.setHintUsingNumber(2); // used 2 hints
+    
+        // Set game state
+        testGame.setPlayers(List.of(userId));
+        testGame.setScoreBoard(new HashMap<>(Map.of(userId, 0)));
+        testGame.setTotalQuestionsMap(new HashMap<>(Map.of(userId, 10)));
+        testGame.setCorrectAnswersMap(new HashMap<>(Map.of(userId, 0)));
+        testGame.setDifficulty("easy");
+    
+        // Set the correct answer
         Map<Long, Country> answers = new HashMap<>();
         answers.put(userId, Country.Switzerland);
         ReflectionTestUtils.setField(gameService, "answers", answers);
-        
-        // Mock generatedHints
-        Map<Country, List<Map<String, Object>>> generatedHints = new HashMap<>();
+    
+        // Mock the return value of getHintsOfOneCountry
+        Map<Country, List<Map<String, Object>>> mockHints = new HashMap<>();
         List<Map<String, Object>> hintList = List.of(Map.of("hint", "It's in Europe"));
-        generatedHints.put(Country.Germany, hintList);
-        ReflectionTestUtils.setField(gameService, "generatedHints", generatedHints);
-        
-        testGame.setPlayers(List.of(userId));
-        testGame.setScoreBoard(new HashMap<>(Map.of(userId, 0)));
-        when(userRepository.findByUserId(userId)).thenReturn(owner);
+        mockHints.put(Country.Switzerland, hintList);
+        doReturn(mockHints).when(gameService).getHintsOfOneCountry(1L, 1L, "easy");
+    
+        // Mock repository calls
         when(gameRepository.findBygameId(1L)).thenReturn(testGame);
-        
+        when(userRepository.findByUserId(userId)).thenReturn(owner);
+    
+        // Invoke the method
         GameGetDTO result = gameService.processingAnswer(gamePostDTO, userId);
-        
+    
+        // Assert results
         assertTrue(result.getJudgement());
         assertEquals(hintList, result.getHints());
         assertEquals(80, testGame.getScoreBoard().get(userId)); // 100 - (2 - 1) * 20
-        
+    
+        // Verify interactions
         verify(gameRepository).save(testGame);
         verify(userRepository).save(owner);
         verify(messagingTemplate).convertAndSend(contains("/scoreBoard"), any(Map.class));
     }
     
-    
     @Test
     public void testProcessingAnswer_IncorrectCountryAnswer() {
         Long userId = 1L;
-        
+    
         GamePostDTO gamePostDTO = new GamePostDTO();
         gamePostDTO.setGameId(1L);
         gamePostDTO.setSubmitAnswer(Country.France); // Incorrect
-        gamePostDTO.setHintUsingNumber(1); // 1 hint used
-        
-        // Mock correct answer
+        gamePostDTO.setHintUsingNumber(1);
+    
+        // Set up game state
+        testGame.setPlayers(List.of(userId));
+        testGame.setScoreBoard(new HashMap<>(Map.of(userId, 0)));
+        testGame.setTotalQuestionsMap(new HashMap<>(Map.of(userId, 10)));
+        testGame.setCorrectAnswersMap(new HashMap<>(Map.of(userId, 0)));
+        testGame.setDifficulty("easy");
+    
+        // Inject correct answer
         Map<Long, Country> answers = new HashMap<>();
         answers.put(userId, Country.Switzerland);
         ReflectionTestUtils.setField(gameService, "answers", answers);
-        
-        // Mock generatedHints
-        Map<Country, List<Map<String, Object>>> generatedHints = new HashMap<>();
+    
+        // Mock getHintsOfOneCountry
+        Map<Country, List<Map<String, Object>>> mockHints = new HashMap<>();
         List<Map<String, Object>> hintList = List.of(Map.of("hint", "It's in Europe"));
-        generatedHints.put(Country.Austria, hintList);
-        ReflectionTestUtils.setField(gameService, "generatedHints", generatedHints);
-        
-        testGame.setPlayers(List.of(userId));
-        testGame.setScoreBoard(new HashMap<>(Map.of(userId, 0)));
-        when(userRepository.findByUserId(userId)).thenReturn(owner);
+        mockHints.put(Country.Austria, hintList);
+        doReturn(mockHints).when(gameService).getHintsOfOneCountry(1L, userId, "easy");
+    
         when(gameRepository.findBygameId(1L)).thenReturn(testGame);
-        
+        when(userRepository.findByUserId(userId)).thenReturn(owner);
+    
         GameGetDTO result = gameService.processingAnswer(gamePostDTO, userId);
-        
+    
         assertFalse(result.getJudgement());
         assertEquals(hintList, result.getHints());
         assertEquals(0, testGame.getScoreBoard().get(userId));
-        
+    
         verify(gameRepository).save(testGame);
         verify(messagingTemplate).convertAndSend(contains("/scoreBoard"), any(Map.class));
     }
@@ -505,44 +501,46 @@ public class GameServiceTest {
     @Test
     public void testProcessingAnswer_LearningTrackUpdate_CorrectAnswer() {
         Long userId = 1L;
-        
-        // GamePostDTO with a correct answer
+    
+        // Create a GamePostDTO with the correct answer
         GamePostDTO gamePostDTO = new GamePostDTO();
         gamePostDTO.setGameId(1L);
-        gamePostDTO.setSubmitAnswer(Country.Switzerland);  // Correct answer
-        gamePostDTO.setHintUsingNumber(1);  // 1 hint used
-        
-        // Mock correct answers
-        Map<Long, Country> answers = new HashMap<>();
-        answers.put(userId, Country.Switzerland);  // Correct answer
-        ReflectionTestUtils.setField(gameService, "answers", answers);
-        
-        // Mock generatedHints
-        Map<Country, List<Map<String, Object>>> generatedHints = new HashMap<>();
-        List<Map<String, Object>> hintList = List.of(Map.of("hint", "It's in Europe"));
-        generatedHints.put(Country.Switzerland, hintList);  // Correct hint for Switzerland
-        ReflectionTestUtils.setField(gameService, "generatedHints", generatedHints);
-        
-        // Set up the game with one player
+        gamePostDTO.setSubmitAnswer(Country.Switzerland);
+        gamePostDTO.setHintUsingNumber(1);
+    
+        // Prepare the game state
         testGame.setPlayers(List.of(userId));
         testGame.setScoreBoard(new HashMap<>(Map.of(userId, 0)));
+        testGame.setTotalQuestionsMap(new HashMap<>(Map.of(userId, 10)));
+        testGame.setCorrectAnswersMap(new HashMap<>(Map.of(userId, 0)));
+        testGame.setDifficulty("easy");
         testGame.setModeType("combat");
-
-        // Mock User object
+    
+        // Set the correct answer in the service state
+        Map<Long, Country> answers = new HashMap<>();
+        answers.put(userId, Country.Switzerland);
+        ReflectionTestUtils.setField(gameService, "answers", answers);
+    
+        // Mock the return value of getHintsOfOneCountry()
+        Map<Country, List<Map<String, Object>>> mockHints = new HashMap<>();
+        List<Map<String, Object>> hintList = List.of(Map.of("hint", "It's in Europe"));
+        mockHints.put(Country.Switzerland, hintList);
+        doReturn(mockHints).when(gameService).getHintsOfOneCountry(1L, 1L, "easy");
+    
+        // Mock user and repositories
         User mockUser = mock(User.class);
-        mockUser.setUserId(userId);
-        mockUser.setUsername("Test User");
-        
-        // Mock the user repository call to return the mocked user
+        when(mockUser.getUserId()).thenReturn(userId);
+        when(mockUser.getUsername()).thenReturn("Test User");
         when(userRepository.findByUserId(userId)).thenReturn(mockUser);
-        
-        // Mock game repository call
         when(gameRepository.findBygameId(1L)).thenReturn(testGame);
-        
+    
+        // Call the method under test
         GameGetDTO result = gameService.processingAnswer(gamePostDTO, userId);
-        
+    
+        // Assert that the answer was judged correct
         assertTrue(result.getJudgement());
-        
+    
+        // Verify that the learning track was updated and user was saved
         verify(mockUser).updateLearningTrack(Country.Switzerland);
         verify(userRepository).save(mockUser);
     }
@@ -550,47 +548,51 @@ public class GameServiceTest {
     @Test
     public void testProcessingAnswer_LearningTrackUpdate_IncorrectAnswer() {
         Long userId = 1L;
-        
-        // GamePostDTO with an incorrect answer
+    
+        // Create a GamePostDTO with an incorrect answer
         GamePostDTO gamePostDTO = new GamePostDTO();
         gamePostDTO.setGameId(1L);
-        gamePostDTO.setSubmitAnswer(Country.France);  // Incorrect answer
-        gamePostDTO.setHintUsingNumber(1);  // 1 hint used
-        
-        // Mock correct answers
-        Map<Long, Country> answers = new HashMap<>();
-        answers.put(userId, Country.Switzerland);  // Correct answer is Switzerland
-        ReflectionTestUtils.setField(gameService, "answers", answers);
-        
-        // Mock generatedHints
-        Map<Country, List<Map<String, Object>>> generatedHints = new HashMap<>();
-        List<Map<String, Object>> hintList = List.of(Map.of("hint", "It's in Europe"));
-        generatedHints.put(Country.Austria, hintList);  // Incorrect hint
-        ReflectionTestUtils.setField(gameService, "generatedHints", generatedHints);
-        
-        // Set up the game with one player
+        gamePostDTO.setSubmitAnswer(Country.France);  // Incorrect
+        gamePostDTO.setHintUsingNumber(1);
+    
+        // Prepare game state
         testGame.setPlayers(List.of(userId));
         testGame.setScoreBoard(new HashMap<>(Map.of(userId, 0)));
+        testGame.setTotalQuestionsMap(new HashMap<>(Map.of(userId, 10)));
+        testGame.setCorrectAnswersMap(new HashMap<>(Map.of(userId, 0)));
+        testGame.setDifficulty("easy");
         testGame.setModeType("combat");
-
-        // Mock User object
+    
+        // Set correct answer mapping
+        Map<Long, Country> answers = new HashMap<>();
+        answers.put(userId, Country.Switzerland);
+        ReflectionTestUtils.setField(gameService, "answers", answers);
+    
+        // Mock getHintsOfOneCountry to return a dummy hint
+        Map<Country, List<Map<String, Object>>> mockHints = new HashMap<>();
+        List<Map<String, Object>> hintList = List.of(Map.of("hint", "It's in Europe"));
+        mockHints.put(Country.Austria, hintList);
+        doReturn(mockHints).when(gameService).getHintsOfOneCountry(1L, 1L, "easy");
+    
+        // Mock user
         User mockUser = mock(User.class);
         when(mockUser.getUserId()).thenReturn(userId);
         when(mockUser.getUsername()).thenReturn("Test User");
-        
-        // Mock the user repository call
+    
         when(userRepository.findByUserId(userId)).thenReturn(mockUser);
         when(gameRepository.findBygameId(1L)).thenReturn(testGame);
-        
-        // Call the method
+    
+        // Call method
         GameGetDTO result = gameService.processingAnswer(gamePostDTO, userId);
-        
-        // Validate result
+    
+        // Assert: answer judged incorrect
         assertFalse(result.getJudgement());
         assertEquals(hintList, result.getHints());
-        
+    
+        // Assert: learning track NOT updated
         verify(mockUser, never()).updateLearningTrack(any());
-        
+    
+        // Assert: user NOT saved
         verify(userRepository, never()).save(mockUser);
     }
     
@@ -880,11 +882,12 @@ public class GameServiceTest {
     
         Game mockGame = mock(Game.class);
         mockUser.setGame(mockGame);
+    
         User newOwner = new User();
         newOwner.setUserId(2L);
         newOwner.setUsername("player2");
     
-        // 配置 mockGame 的行为
+        // Configure mockGame behavior
         when(mockGame.getGameId()).thenReturn(1L);
         when(mockGame.getGameName()).thenReturn("TestGame");
         when(mockGame.getScore(userId)).thenReturn(50);
@@ -894,21 +897,23 @@ public class GameServiceTest {
         when(mockGame.getTime()).thenReturn(60);
         when(mockGame.getModeType()).thenReturn("combat");
         when(mockGame.getRealPlayersNumber()).thenReturn(2);
-        when(mockGame.getOwnerId()).thenReturn(userId); // 初始拥有者为 1L
-        when(mockGame.getPlayers()).thenReturn(Arrays.asList(userId, 2L)); // 玩家列表 [1L, 2L]
+        when(mockGame.getOwnerId()).thenReturn(userId); // initial owner is userId
+        when(mockGame.getPlayers()).thenReturn(Arrays.asList(userId, 2L)); // player list: [1L, 2L]
         when(mockGame.getScoreBoard()).thenReturn(new HashMap<>(Map.of(userId, 50, 2L, 30)));
+    
+        // Mock repository responses
         when(userRepository.findByUserId(userId)).thenReturn(mockUser);
         when(userRepository.findByUserId(2L)).thenReturn(newOwner);
         when(userRepository.save(any(User.class))).thenReturn(mockUser);
         when(gameRepository.save(any(Game.class))).thenReturn(mockGame);
     
-        // 模拟 setOwnerId 的行为，确保后续 getOwnerId 返回 2L
+        // Simulate setOwnerId so that subsequent getOwnerId returns newOwner
         doAnswer(invocation -> {
-            when(mockGame.getOwnerId()).thenReturn(2L); // 在 setOwnerId(2L) 后更新 getOwnerId
+            when(mockGame.getOwnerId()).thenReturn(2L);
             return null;
         }).when(mockGame).setOwnerId(2L);
     
-        // Mock getGameLobby to avoid unnecessary WebSocket calls
+        // Suppress WebSocket call to getGameLobby
         doNothing().when(gameService).getGameLobby();
     
         // Act
@@ -916,10 +921,10 @@ public class GameServiceTest {
     
         // Assert
         verify(mockGame).setRealPlayersNumber(1);
-        verify(mockGame).setOwnerId(2L); // 验证 setOwnerId(2L) 被调用
-        verify(mockGame, times(2)).removePlayer(mockUser); // 期望 removePlayer 被调用两次
+        verify(mockGame).setOwnerId(2L); // ensure setOwnerId was called
+        verify(mockGame, times(2)).removePlayer(mockUser); // ensure user is removed twice
         verify(mockGame).updateScore(eq(userId), eq(-1));
-        verify(messagingTemplate).convertAndSend(eq("/topic/game/1/owner"), eq(2L)); // 期望发送新拥有者 2L
+        verify(messagingTemplate).convertAndSend(eq("/topic/game/1/owner"), eq(2L)); // new owner notification
         verify(messagingTemplate).convertAndSend(eq("/topic/user/1/scoreBoard"), any(Map.class));
         assertNull(mockUser.getGame());
         assertFalse(mockUser.isReady());
@@ -934,29 +939,42 @@ public class GameServiceTest {
         // Arrange
         Game inputGame = new Game();
         inputGame.setOwnerId(1L);
-        inputGame.setGameName("Solo Game");
+        inputGame.setGameName("Solo Test Game");
         inputGame.setModeType("solo");
         inputGame.setTime(5);
         inputGame.setPlayersNumber(1);
-        inputGame.setPassword("pass");
-        
-        // Mock owner
-        when(userRepository.findByUserId(1L)).thenReturn(owner);
-        when(gameRepository.findBygameName("Solo Game")).thenReturn(null);
+        inputGame.setPassword("test123");
+        inputGame.setDifficulty("easy");
+    
+        User ownerUser = new User();
+        ownerUser.setUserId(1L);
+        ownerUser.setUsername("owner");
+    
+        // Mock repository behavior
+        when(userRepository.findByUserId(1L)).thenReturn(ownerUser);
+        when(gameRepository.findByownerId(1L)).thenReturn(null);
+        when(gameRepository.findBygameName("Solo Test Game")).thenReturn(null);
         when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> {
-            Game savedGame = invocation.getArgument(0);
-            savedGame.setGameId(1L);
-            return savedGame;
+            Game g = invocation.getArgument(0);
+            g.setGameId(42L); // simulate saved game with ID
+            return g;
         });
-        
+    
+        // Mock hint generation method
+        Map<Country, List<Map<String, Object>>> fakeHints = new HashMap<>();
+        Map<String, Object> hint = new HashMap<>();
+        hint.put("hint", "Fake Hint");
+        fakeHints.put(Country.Switzerland, List.of(hint));
+        doReturn(fakeHints).when(gameService).getHintsOfOneCountry(anyLong(), eq(1L), eq("easy"));
+    
         // Act
         gameService.startSoloGame(inputGame);
-        
+    
         // Assert
         verify(gameRepository, atLeastOnce()).save(any(Game.class));
-        verify(messagingTemplate).convertAndSend(eq("/topic/startsolo/1/gameId"), eq(1L));
-        verify(messagingTemplate).convertAndSend(eq("/topic/start/1/hints"), any(GameGetDTO.class));
-        verify(messagingTemplate).convertAndSend(eq("/topic/start/1/ready-time"), eq(5));
+        verify(messagingTemplate).convertAndSend(eq("/topic/startsolo/1/gameId"), eq(42L));
+        verify(messagingTemplate).convertAndSend(eq("/topic/start/42/hints"), any(GameGetDTO.class));
+        verify(messagingTemplate).convertAndSend(eq("/topic/start/42/ready-time"), eq(5));
     }
     
     @Test
@@ -1068,42 +1086,112 @@ public class GameServiceTest {
     void startCombatGame_validGame_startGameSuccessfully() throws InterruptedException {
         // Arrange
         Long gameId = 3L;
+    
+        // Set required game state
+        testGameCombat.setDifficulty("easy");
+        testGameCombat.setGameRunning(false);
+        testGameCombat.setPlayers(List.of(1L, 2L));
+    
+        // Use mutable maps to avoid UnsupportedOperationException
+        Map<Long, Integer> scoreBoard = new HashMap<>();
+        scoreBoard.put(1L, 0);
+        scoreBoard.put(2L, 0);
+        testGameCombat.setScoreBoard(scoreBoard);
+    
+        Map<Long, Integer> totalQuestionsMap = new HashMap<>();
+        totalQuestionsMap.put(1L, 10);
+        totalQuestionsMap.put(2L, 10);
+        testGameCombat.setTotalQuestionsMap(totalQuestionsMap);
+    
+        Map<Long, Integer> correctAnswersMap = new HashMap<>();
+        correctAnswersMap.put(1L, 0);
+        correctAnswersMap.put(2L, 0);
+        testGameCombat.setCorrectAnswersMap(correctAnswersMap);
+    
+        // Mock checkAllReady to return true
+        doReturn(true).when(gameService).checkAllReady(gameId);
+    
+        // Mock hint generation logic
+        Map<Country, List<Map<String, Object>>> fakeHints = new HashMap<>();
+        fakeHints.put(Country.Switzerland, List.of(Map.of("hint", "Fake Hint")));
+        doReturn(fakeHints).when(mockUtilService).getFirstHint(gameId);
+    
+        // Mock repository
         when(gameRepository.findBygameId(gameId)).thenReturn(testGameCombat);
-        // doReturn(false).when(gameService).checkAllReady(gameId);
-        
+    
         // Act
         gameService.startGame(gameId);
-        
-        // Assert
+    
+        // Assert: game is saved and messages sent
         verify(gameRepository).save(testGameCombat);
         verify(messagingTemplate).convertAndSend(matches("/topic/start/3/hints"), any(GameGetDTO.class));
         verify(messagingTemplate).convertAndSend(matches("/topic/start/3/ready-time"), eq(5));
-        
-        // Verify the game running flag is set to true
+    
+        // Assert: gameRunning is now true
         assertTrue(testGameCombat.getGameRunning());
-
     }
 
     @Test
     void startCombatGame_threadInterrupted_sendsTimerInterruptedMessage() {
         // Arrange
-        Long gameId = 1L;
-
+        Long gameId = 3L;
+    
+        // Set up test game state
+        testGameCombat.setGameId(gameId);
+        testGameCombat.setDifficulty("easy");
+        testGameCombat.setGameRunning(false);
+        testGameCombat.setPlayers(List.of(1L, 2L));
+    
+        Map<Long, Integer> scoreBoard = new HashMap<>();
+        scoreBoard.put(1L, 0);
+        scoreBoard.put(2L, 0);
+        testGameCombat.setScoreBoard(scoreBoard);
+    
+        Map<Long, Integer> correctAnswers = new HashMap<>();
+        correctAnswers.put(1L, 0);
+        correctAnswers.put(2L, 0);
+        testGameCombat.setCorrectAnswersMap(correctAnswers);
+    
+        Map<Long, Integer> totalQuestions = new HashMap<>();
+        totalQuestions.put(1L, 10);
+        totalQuestions.put(2L, 10);
+        testGameCombat.setTotalQuestionsMap(totalQuestions);
+    
+        // Mock players
+        User player1 = new User();
+        player1.setUserId(1L);
+        player1.setUsername("player1");
+    
+        User player2 = new User();
+        player2.setUserId(2L);
+        player2.setUsername("player2");
+    
+        when(userRepository.findByUserId(1L)).thenReturn(player1);
+        when(userRepository.findByUserId(2L)).thenReturn(player2);
+    
+        // Mock repositories and readiness
         when(gameRepository.findBygameId(gameId)).thenReturn(testGameCombat);
-        doReturn(true).when(gameService).checkAllReady(gameId);
         when(gameRepository.save(any(Game.class))).thenReturn(testGameCombat);
-
-        Thread combatGameThread = new Thread(() -> gameService.startGame(gameId));
-        combatGameThread.start();
-
+        doReturn(true).when(gameService).checkAllReady(gameId);
+    
+        // Mock hint service
+        Map<Country, List<Map<String, Object>>> fakeHints = new HashMap<>();
+        fakeHints.put(Country.Switzerland, List.of(Map.of("hint", "Fake Hint")));
+        doReturn(fakeHints).when(mockUtilService).getFirstHint(gameId);
+    
+        // Act: run game start in a separate thread
+        Thread gameThread = new Thread(() -> gameService.startGame(gameId));
+        gameThread.start();
+    
         try {
-            Thread.sleep(100); // allow thread to start
-            combatGameThread.interrupt(); // simulate interruption
-            combatGameThread.join(); // wait for thread to complete
+            Thread.sleep(100);
+            gameThread.interrupt();  // simulate early interruption
+            gameThread.join();
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt(); // restore interrupt status
+            Thread.currentThread().interrupt();
         }
-
+    
+        // Assert: interrupted message was sent
         verify(messagingTemplate, atLeastOnce()).convertAndSend(
             eq("/topic/game/" + gameId + "/timer-interrupted"),
             eq("TIMER_STOPPED")
