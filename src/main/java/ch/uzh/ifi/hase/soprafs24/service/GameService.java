@@ -830,9 +830,8 @@ public class GameService {
     public List<GameGetDTO> getGamesByUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        String username = user.getUsername();
 
-        return gameRepository.findByPlayersContaining(username).stream()
+        return gameRepository.findByPlayersContaining(userId).stream()
                 .filter(game -> game.getEndTime() != null)
                 .map(game -> {
                     GameGetDTO dto = DTOMapper.INSTANCE.convertGameEntityToGameGetDTO(game);
