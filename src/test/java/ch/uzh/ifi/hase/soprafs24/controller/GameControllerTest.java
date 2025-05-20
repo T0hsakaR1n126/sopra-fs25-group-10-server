@@ -161,11 +161,11 @@ public class GameControllerTest {
 
     @Test
     public void getGamePlayers_validInput_success() throws Exception {
-        User user = new User();
+        UserGetDTO user = new UserGetDTO();
         user.setUsername("player1");
         user.setUserId(1L);
     
-        given(gameService.getGamePlayers(1L)).willReturn(List.of(user));
+        given(gameService.getAllPlayers(1L)).willReturn(List.of(user));
     
         mockMvc.perform(get("/ready/1"))
             .andExpect(status().isOk())
@@ -174,7 +174,7 @@ public class GameControllerTest {
 
     @Test
     public void getGamePlayers_invalidGameId_shouldReturnNotFound() throws Exception {
-        given(gameService.getGamePlayers(99L))
+        given(gameService.getAllPlayers(99L))
             .willThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
     
         mockMvc.perform(get("/ready/99"))
@@ -189,55 +189,7 @@ public class GameControllerTest {
         mockMvc.perform(put("/start/1"))
                 .andExpect(status().isOk());
     }
-
-    @Test
-    public void submitScores_validInput_success() throws Exception {
-        gamePostDTO.setScoreMap(Map.of(1L, 1800));
-        gamePostDTO.setCorrectAnswersMap(Map.of(1L, 7));
-        gamePostDTO.setTotalQuestionsMap(Map.of(1L, 10));
-
-        doNothing().when(gameService).submitScores(eq(1L), any(), any(), any());
-
-        mockMvc.perform(put("/games/1/end")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(gamePostDTO)))
-                .andExpect(status().isNoContent());
-    }
-
-    @Test
-    public void submitScores_invalidScoreMap_shouldReturnBadRequest() throws Exception {
-        doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Score map is missing"))
-            .when(gameService).submitScores(eq(1L), any(), any(), any());
     
-        gamePostDTO.setScoreMap(null);
-    
-        mockMvc.perform(put("/games/1/end")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(gamePostDTO)))
-            .andExpect(status().isBadRequest())
-            .andExpect(status().reason("Score map is missing"));
-    }
-
-    @Test
-    public void getUserGameHistory_success() throws Exception {
-        given(gameService.getGamesByUser(1L)).willReturn(List.of(gameGetDTO));
-
-        mockMvc.perform(get("/users/1/history"))
-                .andExpect(status().isOk());
-    }
-
-    
-    @Test
-    public void getUserGameHistory_userNotFound_shouldReturnNotFound() throws Exception {
-        given(gameService.getGamesByUser(404L))
-            .willThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-    
-        mockMvc.perform(get("/users/404/history"))
-            .andExpect(status().isNotFound())
-            .andExpect(status().reason("User not found"));
-    }
-    
-
     @Test
     public void getLeaderboard_success() throws Exception {
         UserGetDTO userDTO = new UserGetDTO();
@@ -291,6 +243,44 @@ public class GameControllerTest {
             .andExpect(status().isOk());
     }
 
+    @Test
+    public void startSoloGame_success() throws Exception {
+        doNothing().when(gameService).startSoloGame(any(Game.class));
+
+        mockMvc.perform(post("/startsolo")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(gamePostDTO)))
+            .andExpect(status().isCreated());
+    }
+
+    @Test
+    public void startExerciseGame_success() throws Exception {
+        doNothing().when(gameService).startExerciseGame(any(Game.class));
+
+        mockMvc.perform(post("/startexercise")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(gamePostDTO)))
+            .andExpect(status().isCreated());
+    }
+
+    @Test
+    public void nextQuestionExerciseMode_success() throws Exception {
+        GameGetDTO responseDTO = new GameGetDTO();
+        responseDTO.setGameId(1L);
+
+        given(gameService.nextQuestion_ExerciseMode(1L)).willReturn(responseDTO);
+
+        mockMvc.perform(post("/next/1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    public void finishExerciseGame_success() throws Exception {
+        doNothing().when(gameService).saveGame(1L);
+
+        mockMvc.perform(put("/finishexercise/1"))
+            .andExpect(status().isOk());
+    }
 
     private String asJsonString(final Object object) {
         try {

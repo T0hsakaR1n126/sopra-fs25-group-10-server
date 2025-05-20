@@ -7,10 +7,8 @@ import ch.uzh.ifi.hase.soprafs24.rest.dto.GameGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GamePostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserPostDTO;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.UserProfileDTO;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * DTOMapper
@@ -30,7 +28,6 @@ public interface DTOMapper {
   DTOMapper INSTANCE = Mappers.getMapper(DTOMapper.class);
   
   //User mappings
-  @Mapping(source = "name", target = "name")
   @Mapping(source = "username", target = "username")
   @Mapping(source = "token", target = "token")
   @Mapping(source = "password", target = "password")
@@ -40,7 +37,6 @@ public interface DTOMapper {
   User convertUserPostDTOtoEntity(UserPostDTO userPostDTO);
 
   @Mapping(source = "userId", target = "userId")
-  @Mapping(source = "name", target = "name")
   @Mapping(source = "username", target = "username")
   @Mapping(source = "status", target = "status")
   @Mapping(source = "token", target = "token")
@@ -68,6 +64,7 @@ public interface DTOMapper {
   @Mapping(source = "gameCode", target = "gameCode")  
   @Mapping(source = "endTime", target = "endTime")
   @Mapping(source = "finalScore", target = "finalScore")
+  @Mapping(source = "difficulty", target = "difficulty")
   GameGetDTO convertGameEntityToGameGetDTO(Game game);
 
   // Profile mappings

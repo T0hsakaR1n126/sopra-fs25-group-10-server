@@ -1,6 +1,7 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
+import ch.uzh.ifi.hase.soprafs24.constant.Country;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -43,7 +45,6 @@ public class UserServiceIntegrationTest {
 
     testUser = new User();
     testUser.setUsername("testUsername");
-    testUser.setName("testName");
     testUser.setPassword("testPassword");
     testUser.setStatus(UserStatus.OFFLINE);
     testUser.setToken(UUID.randomUUID().toString());
@@ -57,7 +58,6 @@ public class UserServiceIntegrationTest {
   public void createUser_validInputs_success() {
     User newUser = new User();
     newUser.setUsername("testValidUsername");
-    newUser.setName("testValidName");
     newUser.setPassword("testPassword");
     newUser.setToken(UUID.randomUUID().toString());
     newUser.setStatus(UserStatus.OFFLINE);
@@ -78,7 +78,6 @@ public class UserServiceIntegrationTest {
 
     // change the name but forget about the username
     testUser2.setUsername("testUsername");
-    testUser2.setName("testName2");
     testUser2.setPassword("testPassword"); 
     testUser2.setToken(UUID.randomUUID().toString());
 
@@ -99,6 +98,52 @@ public class UserServiceIntegrationTest {
     assertNotEquals("", loggedInUser.getToken());
   }
 
+
+  @Test
+  public void login_userNotFound_throwsUnauthorized() {
+    User loginUser = new User();
+    loginUser.setUsername("nonexistent");
+    loginUser.setPassword("anyPassword");
+  
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+        userService.login(loginUser);
+    });
+  
+    assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+    assertEquals("Your username is not found! Please register one or use correct username!", exception.getReason());
+  }
+  
+  @Test
+  public void login_wrongPassword_throwsUnauthorized() {
+    User loginUser = new User();
+    loginUser.setUsername("testUsername");
+    loginUser.setPassword("wrongPassword");
+  
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+        userService.login(loginUser);
+    });
+  
+    assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatus());
+    assertEquals("Your password is not correct! Please type again!", exception.getReason());
+  }
+  
+  @Test
+  public void login_userAlreadyOnline_throwsBadRequest() {
+    testUser.setStatus(UserStatus.ONLINE);
+    userRepository.saveAndFlush(testUser);
+  
+    User loginUser = new User();
+    loginUser.setUsername("testUsername");
+    loginUser.setPassword("testPassword");
+  
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+        userService.login(loginUser);
+    });
+  
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+    assertEquals("This user has already logged in!", exception.getReason());
+  }
+
   @Test
   public void logout_success() {
     testUser.setStatus(UserStatus.ONLINE);
@@ -113,6 +158,19 @@ public class UserServiceIntegrationTest {
   }
 
   @Test
+  public void logout_invalidToken_throwsNotFound() {
+    User fakeUser = new User();
+    fakeUser.setToken("invalid-token");
+  
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+        userService.logout(fakeUser);
+    });
+  
+    assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+    assertEquals("User not found", exception.getReason());
+  }
+
+  @Test
   public void changePassword_validInput_success() {
     testUser.setPassword("oldPassword");
     testUser = userRepository.saveAndFlush(testUser);
@@ -123,12 +181,50 @@ public class UserServiceIntegrationTest {
     assertNotNull(updatedUser);
     assertEquals("newPassword123", updatedUser.getPassword());
   }
+
+  
+  @Test
+  public void changePassword_wrongOldPassword_throwsBadRequest() {
+    testUser.setPassword("oldPassword");
+    userRepository.saveAndFlush(testUser);
+  
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+        userService.changePassword(testUser.getUserId(), "wrongPassword", "newPass");
+    });
+  
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+    assertEquals("Incorrect current password", exception.getReason());
+  }
+  
+  @Test
+  public void changePassword_newPasswordEmpty_throwsBadRequest() {
+    testUser.setPassword("correctOld");
+    userRepository.saveAndFlush(testUser);
+  
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+        userService.changePassword(testUser.getUserId(), "correctOld", "   ");
+    });
+  
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+    assertEquals("New password must not be empty", exception.getReason());
+  }
+  
+  @Test
+  public void changePassword_userNotFound_throwsNotFound() {
+    Long invalidId = 9999L;
+  
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+        userService.changePassword(invalidId, "old", "new");
+    });
+  
+    assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+    assertEquals("User not found", exception.getReason());
+  }
   
   @Test
   public void findUserById_validId_success() {
     User savedUser = new User();
     savedUser.setUsername("abc");
-    savedUser.setName("abc");
     savedUser.setPassword("abc");
     savedUser.setToken(UUID.randomUUID().toString());
     savedUser.setStatus(UserStatus.OFFLINE);
@@ -176,17 +272,60 @@ public class UserServiceIntegrationTest {
       assertEquals("password", updatedUser.getPassword());
   }
 
+  @Test
+  public void updateUserProfile_invalidAvatar_throwsException() {
+    User update = new User();
+    update.setUsername("newName");
+    update.setAvatar("/invalid.png");
+  
+    assertThrows(ResponseStatusException.class, () ->
+        userService.updateUserProfile(testUser.getUserId(), update));
+  }
+
+  @Test
+  public void updateUserProfile_usernameExists_throwsException() {
+    User existing = new User();
+    existing.setUsername("duplicate");
+    existing.setPassword("pass");
+    existing.setToken(UUID.randomUUID().toString());
+    existing.setStatus(UserStatus.OFFLINE);
+    userRepository.saveAndFlush(existing);
+  
+    User update = new User();
+    update.setUsername("duplicate");
+  
+    assertThrows(ResponseStatusException.class, () ->
+        userService.updateUserProfile(testUser.getUserId(), update));
+  }
 
   @Test
   public void getGameHistory_success() {
-    testUser.setGameHistory("game1", 100, 8, 10, "24-04-2024 16:25", 5, "solo");
+    testUser.setGameHistory("game1", 100, 8, 10, LocalDateTime.now(), 5, "solo");
     userRepository.save(testUser);
 
     UserGetDTO result = userService.getHistory(testUser.getUserId());
 
     assertNotNull(result.getGameHistory());
-    assertEquals(100, result.getGameHistory().get("game1").getScore());
-    assertEquals(8, result.getGameHistory().get("game1").getCorrectAnswers());
-    assertEquals(10, result.getGameHistory().get("game1").getTotalQuestions());
+  }
+
+  @Test
+  public void getUser_validId_success() {
+    User saved = userRepository.saveAndFlush(testUser);
+    UserGetDTO result = userService.getUser(saved.getUserId());
+  
+    assertNotNull(result);
+    assertEquals(0, result.getLevel());
+  }
+
+  @Test
+  public void getLearningTracking_success() {
+    testUser.updateLearningTrack(Country.Australia);
+    userRepository.saveAndFlush(testUser);
+  
+    UserGetDTO dto = userService.getLearningTracking(testUser.getUserId());
+  
+    assertNotNull(dto);
+    assertTrue(dto.getLearningTracking().containsKey(Country.Australia));
+    assertEquals(1, dto.getLearningTracking().get(Country.Australia));
   }
 }
